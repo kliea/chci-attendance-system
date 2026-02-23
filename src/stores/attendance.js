@@ -10,6 +10,9 @@ export const useAttendanceStore = defineStore('attendance', () => {
   const list = ref([])
   const loading = ref(false)
   const error = ref(null)
+  const totalCount = ref(0)
+  const page = ref(1)
+  const pageSize = ref(10)
 
   const listWithName = computed(() =>
     list.value.map((row) => ({
@@ -18,16 +21,24 @@ export const useAttendanceStore = defineStore('attendance', () => {
     }))
   )
 
+  const totalPages = computed(() =>
+    pageSize.value > 0 ? Math.max(1, Math.ceil(totalCount.value / pageSize.value)) : 1
+  )
+
   /**
-   * Fetch attendance. Manager: optional dateFrom, dateTo, staffId, status. Employee: own only (via profile.bio_id → staff).
+   * Fetch attendance. Manager: optional dateFrom, dateTo, staffId, status, page, pageSize. Employee: own only (via profile.bio_id → staff).
    */
   async function fetchAttendance(opts = {}) {
     loading.value = true
     error.value = null
 
+    const usePagination = opts.page != null && opts.pageSize != null && !opts.forCurrentUserOnly
+    const requestPage = usePagination ? opts.page : 1
+    const requestPageSize = usePagination ? opts.pageSize : 1000
+
     let query = supabase
       .from('attendance_logs')
-      .select('id, date, time_in, time_out, status, source, staff_id, staff(full_name, bio_id)')
+      .select('id, date, time_in, time_out, status, source, staff_id, staff(full_name, bio_id)', { count: usePagination ? 'exact' : undefined })
       .order('date', { ascending: false })
 
     if (opts.forCurrentUserOnly) {
@@ -47,13 +58,25 @@ export const useAttendanceStore = defineStore('attendance', () => {
     if (opts.dateTo) query = query.lte('date', opts.dateTo)
     if (opts.status) query = query.eq('status', opts.status)
 
-    const { data, err } = await query
+    if (usePagination) {
+      const from = (requestPage - 1) * requestPageSize
+      const to = from + requestPageSize - 1
+      query = query.range(from, to)
+    }
 
-    if (err) {
-      error.value = err.message
+    const { data, error: reqError, count } = await query
+
+    if (reqError) {
+      error.value = reqError.message
       list.value = []
+      if (usePagination) totalCount.value = 0
     } else {
       list.value = data ?? []
+      if (usePagination) {
+        totalCount.value = count ?? list.value.length
+        page.value = requestPage
+        pageSize.value = requestPageSize
+      }
     }
     loading.value = false
   }
@@ -63,6 +86,10 @@ export const useAttendanceStore = defineStore('attendance', () => {
     listWithName,
     loading,
     error,
+    totalCount,
+    totalPages,
+    page,
+    pageSize,
     fetchAttendance,
   }
 })
