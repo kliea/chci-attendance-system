@@ -45,7 +45,7 @@ const auth = useAuthStore()
 const managerNav = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/employees', label: 'Employees' },
-  { to: '/attendance', label: 'Attendance' },
+  { to: '/attendance', label: 'Employee DTR' },
   { to: '/import', label: 'Import' },
   { to: '/rectifications', label: 'Rectifications' },
   { to: '/holidays', label: 'Holidays' },

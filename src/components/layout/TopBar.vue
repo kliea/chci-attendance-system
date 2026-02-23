@@ -33,7 +33,7 @@ const pageTitle = computed(() => {
   const titles = {
     dashboard: 'Dashboard',
     employees: 'Employees',
-    attendance: 'Attendance',
+    attendance: 'Employee DTR',
     import: 'Import',
     rectifications: 'Rectifications',
     holidays: 'Holidays',
