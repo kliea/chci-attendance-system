@@ -14,10 +14,17 @@ create table if not exists public.profiles (
   id           uuid primary key references auth.users(id) on delete cascade,
   bio_id       text unique,
   full_name    text not null,
+  email        text,
+  program      text check (program is null or program in ('CS', 'IS', 'IT')),
   role         text not null check (role in ('admin', 'manager', 'supervisor', 'employee')),
   team_id      uuid references public.teams(id),
   created_at   timestamptz default now()
 );
+
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists program text;
+alter table public.profiles drop constraint if exists profiles_program_check;
+alter table public.profiles add constraint profiles_program_check check (program is null or program in ('CS', 'IS', 'IT'));
 
 -- Add manager_id to teams (after profiles exists)
 alter table public.teams
@@ -134,20 +141,24 @@ create policy "Managers can update profiles"
 -- No insert policy: profile is created only by the trigger below (avoids RLS issues on signup)
 
 -- Required: trigger creates profile on signup so the app never inserts (avoids RLS "new row violates" error)
--- Sets full_name, role = 'employee', and bio_id from raw_user_meta_data when provided (e.g. from Employees → Register)
+-- Sets full_name, role = 'employee', bio_id, email, program from raw_user_meta_data when provided (e.g. from Employees → Register)
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, role, bio_id)
+  insert into public.profiles (id, full_name, role, bio_id, email, program)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1), 'User'),
     'employee',
-    new.raw_user_meta_data->>'bio_id'
+    new.raw_user_meta_data->>'bio_id',
+    new.email,
+    new.raw_user_meta_data->>'program'
   )
   on conflict (id) do update set
     full_name = coalesce(excluded.full_name, profiles.full_name),
-    bio_id = coalesce(excluded.bio_id, profiles.bio_id);
+    bio_id = coalesce(excluded.bio_id, profiles.bio_id),
+    email = coalesce(excluded.email, profiles.email),
+    program = coalesce(excluded.program, profiles.program);
   return new;
 end;
 $$ language plpgsql security definer;
