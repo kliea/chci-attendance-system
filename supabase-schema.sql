@@ -1,7 +1,6 @@
 -- Klinth — run this in Supabase SQL Editor to create tables if they don't exist.
--- After running: Supabase may need a moment to refresh; if the app still says
--- "table not in schema cache", try Dashboard → Project Settings → API → "Reload schema cache" (or restart project).
--- Handles circular ref: teams first (no manager_id), then profiles, then add manager_id.
+-- Attendance is keyed by staff (no auth required); add staff via Employees → Add from list, then import .dat.
+-- If you already have attendance_logs with user_id, drop that table first or run a migration to switch to staff_id.
 
 -- TEAMS (created first so profiles can reference it)
 create table if not exists public.teams (
@@ -23,19 +22,26 @@ create table if not exists public.profiles (
 -- Add manager_id to teams (after profiles exists)
 alter table public.teams
   add column if not exists manager_id uuid references public.profiles(id);
--- Re-create FK if you prefer it as constraint; "if not exists" on column only
 
--- ATTENDANCE LOGS
+-- STAFF (roster: no auth required; used for attendance by Bio ID)
+create table if not exists public.staff (
+  id           uuid primary key default gen_random_uuid(),
+  bio_id       text not null unique,
+  full_name    text not null,
+  created_at   timestamptz default now()
+);
+
+-- ATTENDANCE LOGS (keyed by staff so attendance can exist without user accounts)
 create table if not exists public.attendance_logs (
   id           uuid primary key default gen_random_uuid(),
-  user_id      uuid references public.profiles(id) not null,
+  staff_id     uuid references public.staff(id) on delete cascade not null,
   date         date not null,
   time_in      time,
   time_out     time,
   status       text check (status in ('present', 'late', 'absent', 'holiday')),
   source       text default 'biometric',
   created_at   timestamptz default now(),
-  unique(user_id, date)
+  unique(staff_id, date)
 );
 
 -- RECTIFICATION REQUESTS
@@ -62,30 +68,86 @@ create table if not exists public.holidays (
   created_at   timestamptz default now()
 );
 
+-- Helper: SECURITY DEFINER so RLS on profiles doesn't recurse (avoids 500 on profile fetch)
+create or replace function public.is_manager()
+returns boolean
+language sql security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role in ('admin', 'manager', 'supervisor')
+  );
+$$;
+
+-- RLS: staff — managers can do all; no auth needed for roster
+alter table public.staff enable row level security;
+drop policy if exists "Managers can select staff" on public.staff;
+drop policy if exists "Managers can insert staff" on public.staff;
+drop policy if exists "Managers can update staff" on public.staff;
+create policy "Managers can select staff"
+  on public.staff for select using (public.is_manager());
+create policy "Managers can insert staff"
+  on public.staff for insert with check (public.is_manager());
+create policy "Managers can update staff"
+  on public.staff for update using (public.is_manager());
+
+-- RLS: attendance_logs — employee reads own (via profile.bio_id = staff.bio_id); managers read all
+alter table public.attendance_logs enable row level security;
+drop policy if exists "Users can read own attendance" on public.attendance_logs;
+drop policy if exists "Managers can read all attendance" on public.attendance_logs;
+drop policy if exists "Managers can insert attendance" on public.attendance_logs;
+drop policy if exists "Managers can update attendance" on public.attendance_logs;
+create policy "Users can read own attendance"
+  on public.attendance_logs for select
+  using (
+    exists (
+      select 1 from public.staff s
+      inner join public.profiles p on p.bio_id = s.bio_id and p.id = auth.uid()
+      where s.id = staff_id
+    )
+  );
+create policy "Managers can read all attendance"
+  on public.attendance_logs for select using (public.is_manager());
+create policy "Managers can insert attendance"
+  on public.attendance_logs for insert with check (public.is_manager());
+create policy "Managers can update attendance"
+  on public.attendance_logs for update using (public.is_manager());
+
 -- RLS: allow users to read/update own profile, and to insert own profile on signup
 alter table public.profiles enable row level security;
-
+drop policy if exists "Users can read own profile" on public.profiles;
+drop policy if exists "Users can update own profile" on public.profiles;
+drop policy if exists "Managers can select all profiles" on public.profiles;
+drop policy if exists "Managers can update profiles" on public.profiles;
 create policy "Users can read own profile"
   on public.profiles for select
   using (auth.uid() = id);
-
 create policy "Users can update own profile"
   on public.profiles for update
   using (auth.uid() = id);
+create policy "Managers can select all profiles"
+  on public.profiles for select using (public.is_manager());
+create policy "Managers can update profiles"
+  on public.profiles for update using (public.is_manager());
 
 -- No insert policy: profile is created only by the trigger below (avoids RLS issues on signup)
 
 -- Required: trigger creates profile on signup so the app never inserts (avoids RLS "new row violates" error)
+-- Sets full_name, role = 'employee', and bio_id from raw_user_meta_data when provided (e.g. from Employees → Register)
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, role)
+  insert into public.profiles (id, full_name, role, bio_id)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1), 'User'),
-    'employee'
+    'employee',
+    new.raw_user_meta_data->>'bio_id'
   )
-  on conflict (id) do update set full_name = coalesce(excluded.full_name, profiles.full_name);
+  on conflict (id) do update set
+    full_name = coalesce(excluded.full_name, profiles.full_name),
+    bio_id = coalesce(excluded.bio_id, profiles.bio_id);
   return new;
 end;
 $$ language plpgsql security definer;
