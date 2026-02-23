@@ -1,45 +1,55 @@
 <template>
-  <div class="min-h-screen bg-surface flex items-center justify-center p-6">
-    <div class="w-full max-w-sm">
-      <h1 class="font-display text-ink text-2xl font-medium mb-8 text-center">Klinth</h1>
-      <form class="space-y-4" @submit.prevent="handleSubmit">
-        <div>
-          <label for="email" class="block text-sm font-medium text-muted mb-1">Email</label>
-          <input
-            id="email"
-            v-model="email"
-            type="email"
-            required
-            autocomplete="email"
-            class="w-full px-3 py-2 bg-panel border border-border rounded text-ink placeholder-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-            placeholder="you@example.com"
-          />
-        </div>
-        <div>
-          <label for="password" class="block text-sm font-medium text-muted mb-1">Password</label>
-          <input
-            id="password"
-            v-model="password"
-            type="password"
-            required
-            autocomplete="current-password"
-            class="w-full px-3 py-2 bg-panel border border-border rounded text-ink placeholder-muted focus:outline-none focus:ring-1 focus:ring-accent focus:border-accent"
-            placeholder="••••••••"
-          />
-        </div>
-        <p v-if="auth.error" class="text-danger text-sm">{{ auth.error }}</p>
-        <button
-          type="submit"
-          :disabled="loading"
-          class="w-full py-2.5 bg-accent text-surface font-medium rounded hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface disabled:opacity-50"
-        >
-          {{ loading ? 'Signing in…' : 'Sign in' }}
-        </button>
-      </form>
-      <p class="text-center text-muted text-sm mt-4">
-        No account?
-        <router-link to="/register" class="text-accent hover:underline">Create one</router-link>
-      </p>
+  <div class="min-h-screen bg-anito-black flex">
+    <div class="hidden md:flex w-[60%] flex-col items-center justify-center p-12">
+      <p class="text-[10px] tracking-[0.3em] uppercase text-anito-blue-mid font-sans font-medium">CHCI</p>
+      <h1 class="font-display font-light text-[72px] tracking-wide text-white mt-2">
+        ANITO<span class="inline-block w-3 h-3 rounded-full bg-anito-blue-mid mb-1 ml-1 align-middle"></span>
+      </h1>
+      <div class="w-8 h-0.5 bg-anito-blue-mid my-4"></div>
+      <p class="text-[10px] tracking-[0.3em] uppercase text-anito-gray font-sans font-light">OJT Attendance Monitoring</p>
+    </div>
+    <div class="flex-1 md:w-[40%] bg-anito-white flex flex-col items-center justify-center p-8">
+      <div class="w-full max-w-sm space-y-6">
+        <h2 class="font-display font-light text-2xl tracking-wide text-anito-black md:hidden text-center">ANITO</h2>
+        <form class="space-y-5" @submit.prevent="handleSubmit">
+          <div>
+            <label for="email" class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2">Email</label>
+            <input
+              id="email"
+              v-model="email"
+              type="email"
+              required
+              autocomplete="email"
+              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors duration-150"
+              placeholder="you@example.com"
+            />
+          </div>
+          <div>
+            <label for="password" class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2">Password</label>
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              required
+              autocomplete="current-password"
+              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors duration-150"
+              placeholder="••••••••"
+            />
+          </div>
+          <p v-if="auth.error" class="text-red-600 text-sm">{{ auth.error }}</p>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="bg-anito-black text-white text-[11px] tracking-[0.2em] uppercase font-sans font-medium py-3 px-8 rounded hover:bg-anito-blue-deep transition-colors duration-150 w-full disabled:opacity-50"
+          >
+            {{ loading ? 'Signing in…' : 'Sign in' }}
+          </button>
+        </form>
+        <p class="text-center text-sm text-anito-gray font-sans font-light">
+          No account?
+          <router-link to="/register" class="text-anito-blue-mid hover:underline transition-colors">Create one</router-link>
+        </p>
+      </div>
     </div>
   </div>
 </template>

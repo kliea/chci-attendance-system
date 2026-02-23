@@ -7,6 +7,6 @@
     @apply font-sans antialiased;
   }
   body {
-    @apply bg-surface text-ink min-h-screen;
+    @apply bg-anito-white text-anito-black min-h-screen font-sans font-light;
   }
 }

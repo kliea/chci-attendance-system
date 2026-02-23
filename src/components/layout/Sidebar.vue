@@ -1,7 +1,10 @@
 <template>
-  <aside class="w-56 shrink-0 bg-panel border-r border-border flex flex-col">
-    <div class="p-4 border-b border-border">
-      <h1 class="font-display font-medium text-ink text-lg tracking-tight">Klinth</h1>
+  <aside class="w-52 shrink-0 bg-anito-black flex flex-col">
+    <div class="p-4 border-b border-[#1e2228]">
+      <span class="font-display font-light text-2xl tracking-[0.22em] uppercase text-white">
+        ANITO<span class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"></span>
+      </span>
+      <p class="text-[9px] tracking-[0.3em] uppercase text-anito-gray mt-1 font-sans font-light">OJT Attendance System</p>
     </div>
     <nav class="flex-1 p-3 space-y-0.5">
       <template v-if="auth.isManager">
@@ -10,7 +13,7 @@
           :key="item.to"
           :to="item.to"
           class="nav-link"
-          active-class="bg-panel text-accent border-l-2 border-accent"
+          active-class="nav-link-active"
         >
           {{ item.label }}
         </router-link>
@@ -21,12 +24,15 @@
           :key="item.to"
           :to="item.to"
           class="nav-link"
-          active-class="bg-panel text-accent border-l-2 border-accent"
+          active-class="nav-link-active"
         >
           {{ item.label }}
         </router-link>
       </template>
     </nav>
+    <div class="border-t border-[#1e2228] p-3 mt-auto">
+      <span class="text-[11px] text-anito-gray font-sans font-light">{{ auth.fullName }}</span>
+    </div>
   </aside>
 </template>
 
@@ -53,6 +59,22 @@ const employeeNav = [
 
 <style scoped>
 .nav-link {
-  @apply block px-3 py-2 rounded text-muted text-sm font-medium border-l-2 border-transparent hover:text-ink hover:bg-panel transition-colors;
+  @apply block text-[10px] tracking-[0.18em] uppercase font-sans font-medium px-3 py-2 rounded text-[#4a5568] hover:text-white hover:bg-[#131820] transition-colors duration-150;
+}
+.nav-link-active {
+  @apply bg-[#131820] text-white;
+  position: relative;
+  padding-left: 1.25rem;
+}
+.nav-link-active::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.25rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background-color: #2B5BAA;
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="border-2 border-dashed rounded-lg transition-colors min-h-[200px] flex flex-col items-center justify-center p-8"
-    :class="isDragging ? 'border-accent bg-accent/5' : 'border-border bg-surface/50 hover:border-muted'"
+    class="border-2 border-dashed rounded-lg h-52 flex flex-col items-center justify-center cursor-pointer transition-colors duration-150"
+    :class="isDragging ? 'border-anito-black bg-anito-blue-light' : 'border-anito-gray-light hover:border-anito-blue-mid'"
     @dragover.prevent="isDragging = true"
     @dragleave.prevent="isDragging = false"
     @drop.prevent="handleDrop"
@@ -13,17 +13,19 @@
       class="hidden"
       @change="handleSelect"
     />
-    <span class="text-muted text-4xl mb-3" aria-hidden="true">📁</span>
-    <p class="text-ink font-medium text-sm">Drop a .dat file here or click to browse</p>
-    <p class="text-muted text-xs mt-1">Attendance .dat only. Max 10MB. From ZKTeco devices.</p>
+    <svg class="text-anito-gray w-8 h-8 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+    </svg>
+    <p class="text-sm text-anito-gray font-sans font-light">Drop a .dat file here or click to browse</p>
+    <p class="text-anito-gray text-xs mt-1 font-sans font-light">Attendance .dat only. Max 10MB. From ZKTeco devices.</p>
     <button
       type="button"
-      class="mt-4 px-4 py-2 bg-accent text-surface text-sm font-medium rounded hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-surface"
+      class="mt-4 border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase font-sans font-medium px-4 py-2 rounded hover:border-anito-blue-mid hover:text-anito-blue-mid transition-colors duration-150"
       @click="fileInput?.click()"
     >
       Choose file
     </button>
-    <p v-if="error" class="text-danger text-sm mt-3">{{ error }}</p>
+    <p v-if="error" class="text-red-600 text-sm mt-3">{{ error }}</p>
   </div>
 </template>
 
