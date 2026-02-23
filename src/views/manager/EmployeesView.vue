@@ -30,7 +30,47 @@
       </div>
     </header>
 
+    <!-- Registered employees (profiles with bio id, email, name, program) -->
+    <section class="rounded border border-anito-gray-light overflow-hidden mb-8">
+      <h2 class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white">Registered employees</h2>
+      <div v-if="employees.loading && !employees.list.length" class="p-8 space-y-2">
+        <div class="h-0.5 w-full bg-anito-gray-light rounded-full overflow-hidden">
+          <div class="h-full bg-anito-blue-mid animate-pulse rounded-full transition-all duration-300" style="width: 60%"></div>
+        </div>
+      </div>
+      <div v-else-if="employees.error" class="p-4 text-red-600 text-sm">{{ employees.error }}</div>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-anito-black">
+            <tr>
+              <th class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left">Name</th>
+              <th class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left">Bio ID</th>
+              <th class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left">Email</th>
+              <th class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left">Program</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="p in employeeProfiles"
+              :key="p.id"
+              class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
+            >
+              <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ p.full_name }}</td>
+              <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ p.bio_id || '—' }}</td>
+              <td class="px-4 py-3 text-sm font-sans text-anito-gray">{{ p.email || '—' }}</td>
+              <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ p.program || '—' }}</td>
+            </tr>
+            <tr v-if="!employees.list.length">
+              <td colspan="4" class="px-4 py-12 text-center text-anito-gray text-sm font-sans font-light">No registered employees. Use Register user or Bulk create.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Staff roster (for attendance import) -->
     <section class="rounded border border-anito-gray-light overflow-hidden">
+      <h2 class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white">Staff roster</h2>
       <div v-if="staff.loading" class="p-8 space-y-2">
         <div class="h-0.5 w-full bg-anito-gray-light rounded-full overflow-hidden">
           <div class="h-full bg-anito-blue-mid animate-pulse rounded-full transition-all duration-300" style="width: 60%"></div>
@@ -108,6 +148,19 @@
               class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
               placeholder="Defaults to bio_id@klinth.local"
             />
+          </div>
+          <div>
+            <label for="reg-program" class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2">Program</label>
+            <select
+              id="reg-program"
+              v-model="registerForm.program"
+              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
+            >
+              <option value="">—</option>
+              <option value="CS">CS</option>
+              <option value="IS">IS</option>
+              <option value="IT">IT</option>
+            </select>
           </div>
           <div>
             <label for="reg-password" class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2">Password (optional)</label>
@@ -205,10 +258,19 @@
                 class="w-20 px-4 py-3 border border-anito-gray-light rounded bg-transparent text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none transition-colors"
                 placeholder="Bio ID"
               />
+              <select
+                v-model="row.program"
+                class="w-16 px-2 py-3 border border-anito-gray-light rounded bg-transparent text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none transition-colors"
+              >
+                <option value="">—</option>
+                <option value="CS">CS</option>
+                <option value="IS">IS</option>
+                <option value="IT">IT</option>
+              </select>
               <button type="button" class="text-anito-gray hover:text-red-600 text-sm transition-colors duration-150 font-sans font-light" aria-label="Remove row" @click="bulkRows.splice(i, 1)">Remove</button>
             </div>
           </div>
-          <button type="button" class="text-anito-blue-mid text-sm font-sans font-medium hover:text-anito-blue-deep transition-colors duration-150" @click="bulkRows.push({ email: '', fullName: '', bioId: '' })">+ Add row</button>
+          <button type="button" class="text-anito-blue-mid text-sm font-sans font-medium hover:text-anito-blue-deep transition-colors duration-150" @click="bulkRows.push({ email: '', fullName: '', bioId: '', program: '' })">+ Add row</button>
           <p v-if="bulkError" class="text-red-600 text-sm mt-2">{{ bulkError }}</p>
           <div v-if="bulkResults.length" class="mt-4 space-y-2 text-sm">
             <div class="flex items-center justify-between gap-2 flex-wrap">
@@ -276,7 +338,7 @@ const showRegisterModal = ref(false)
 const showListModal = ref(false)
 const showBulkModal = ref(false)
 
-const registerForm = reactive({ fullName: '', bioId: '', email: '', password: '' })
+const registerForm = reactive({ fullName: '', bioId: '', email: '', password: '', program: '' })
 const registerError = ref('')
 const registerSuccess = ref('')
 const registerSaving = ref(false)
@@ -285,6 +347,10 @@ const listPaste = ref(DEFAULT_LIST_PASTE)
 const listError = ref('')
 const listSuccess = ref('')
 const listSaving = ref(false)
+
+const employeeProfiles = computed(() =>
+  employees.list.filter((p) => p.role === 'employee')
+)
 
 const listParsed = computed(() => {
   const lines = (listPaste.value || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
@@ -300,19 +366,22 @@ const listParsed = computed(() => {
   return out
 })
 
-const bulkRows = ref([{ email: '', fullName: '', bioId: '' }])
+const bulkRows = ref([{ email: '', fullName: '', bioId: '', program: '' }])
 const bulkError = ref('')
 const bulkResults = ref([])
 const bulkSaving = ref(false)
 const bulkCopyFeedback = ref('')
 
-onMounted(() => staff.fetchStaff())
+onMounted(async () => {
+  await Promise.all([staff.fetchStaff(), employees.fetchEmployees()])
+})
 
 function openRegisterModal() {
   registerForm.fullName = ''
   registerForm.bioId = ''
   registerForm.email = ''
   registerForm.password = ''
+  registerForm.program = ''
   registerError.value = ''
   registerSuccess.value = ''
   showRegisterModal.value = true
@@ -326,7 +395,7 @@ function openListModal() {
 }
 
 function openBulkModal() {
-  bulkRows.value = [{ email: '', fullName: '', bioId: '' }]
+  bulkRows.value = [{ email: '', fullName: '', bioId: '', program: '' }]
   bulkError.value = ''
   bulkResults.value = []
   bulkCopyFeedback.value = ''
@@ -369,6 +438,7 @@ async function submitRegister() {
     bioId: registerForm.bioId.trim() || null,
     email: registerForm.email.trim() || null,
     password: registerForm.password || null,
+    program: registerForm.program || null,
   })
   registerSaving.value = false
   if (result.ok) {
@@ -413,6 +483,7 @@ async function submitBulk() {
     email: (r.email || '').trim(),
     fullName: (r.fullName || '').trim(),
     bioId: (r.bioId || '').trim() || null,
+    program: (r.program || '').trim() || null,
   }))
   if (!rows.length) {
     bulkError.value = 'Add at least one row with an email.'
@@ -429,6 +500,7 @@ async function submitBulk() {
       bioId: row.bioId,
       email: row.email,
       password: null,
+      program: row.program || null,
     })
     bulkResults.value.push({ ...row, result })
   }

@@ -26,7 +26,7 @@ export const useEmployeesStore = defineStore('employees', () => {
     error.value = null
     const { data, err } = await supabase
       .from('profiles')
-      .select('id, full_name, bio_id, role, created_at')
+      .select('id, full_name, bio_id, email, program, role, created_at')
       .order('full_name')
     if (err) {
       error.value = err.message
@@ -38,13 +38,15 @@ export const useEmployeesStore = defineStore('employees', () => {
   }
 
   /**
-   * Create one auth user + profile (role employee). Uses signUp; pass full_name and bio_id in metadata.
+   * Create one auth user + profile (role employee). Uses signUp; pass full_name, bio_id, program in metadata.
    * Email required by Auth; password required (use generated if not provided).
    * @returns { Promise<{ ok: boolean, userId?: string, email: string, password?: string, error?: string }> }
    */
-  async function createEmployee({ fullName, bioId, email, password: rawPassword }) {
+  async function createEmployee({ fullName, bioId, email, password: rawPassword, program: programVal }) {
     const emailVal = (email || '').trim() || (bioId ? `${String(bioId).trim()}@klinth.local` : '')
     const password = (rawPassword || '').trim() || randomPassword()
+    const program = (programVal || '').trim() || null
+    const validProgram = program && ['CS', 'IS', 'IT'].includes(program) ? program : null
 
     if (!emailVal) {
       return { ok: false, error: 'Email or Bio ID is required.' }
@@ -60,6 +62,7 @@ export const useEmployeesStore = defineStore('employees', () => {
         data: {
           full_name: (fullName || '').trim() || emailVal.split('@')[0],
           bio_id: (bioId || '').trim() || null,
+          program: validProgram,
         },
       },
     })
@@ -72,10 +75,13 @@ export const useEmployeesStore = defineStore('employees', () => {
     }
 
     const userId = data.user.id
-    const bioIdVal = (bioId || '').trim()
-    if (bioIdVal) {
-      await supabase.from('profiles').update({ bio_id: bioIdVal }).eq('id', userId)
+    const updates = {}
+    if ((bioId || '').trim()) updates.bio_id = (bioId || '').trim()
+    if (validProgram) updates.program = validProgram
+    if (Object.keys(updates).length) {
+      await supabase.from('profiles').update(updates).eq('id', userId)
     }
+    await supabase.from('profiles').update({ email: emailVal }).eq('id', userId)
 
     return {
       ok: true,
