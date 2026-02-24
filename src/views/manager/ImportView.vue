@@ -104,7 +104,7 @@ async function onFileSelected(file) {
   try {
     const result = await parseDatFile(file)
     if (result.type === 'user') {
-      parseError.value = 'This file looks like a user roster, not an attendance log. Import only attendance .dat files. Add users via Employees → Register or bulk create.'
+      parseError.value = 'This file looks like a user roster, not an attendance log. Import only attendance .dat files. Add staff via Employees → Add from list; staff can register at /register.'
       return
     }
     parsed.type = 'attendance'
