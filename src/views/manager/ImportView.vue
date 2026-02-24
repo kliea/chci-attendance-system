@@ -9,21 +9,13 @@
       </p>
     </header>
 
-    <section
-      class="rounded border border-anito-gray-light overflow-hidden"
-      aria-label="Import area"
-    >
+    <Card aria-label="Import area">
       <div class="min-h-[320px] flex flex-col bg-white">
-        <!-- Step 1: Upload -->
         <template v-if="step === 'upload'">
-          <FileDropzone
-            class="m-4"
-            @file="onFileSelected"
-          />
+          <FileDropzone class="m-4" @file="onFileSelected" />
           <p v-if="parseError" class="px-4 pb-4 text-red-600 text-sm">{{ parseError }}</p>
         </template>
 
-        <!-- Step 2: Preview + Confirm -->
         <template v-else-if="step === 'preview'">
           <ParsePreviewTable
             :type="parsed.type"
@@ -37,40 +29,31 @@
             </p>
             <p class="text-anito-gray text-xs font-sans font-light">Only PINs that exist in the staff roster are imported. Seed staff first (e.g. <strong class="text-anito-black">Employees → Add from list</strong> or run the employee seed SQL); unknown PINs are skipped.</p>
             <div class="flex gap-2">
-              <button
-                type="button"
-                class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase font-sans font-medium px-4 py-2 rounded hover:border-anito-black transition-colors duration-150"
-                @click="resetToUpload"
-              >
+              <Button variant="outline" @click="resetToUpload">
                 Cancel
-              </button>
-              <button
-                type="button"
-                class="bg-anito-black text-white text-[11px] tracking-[0.2em] uppercase py-3 px-6 rounded hover:bg-anito-blue-deep transition-colors duration-150 w-full font-sans font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              </Button>
+              <Button
+                variant="primary"
+                block
                 :disabled="parsed.records.length === 0"
                 @click="confirmImport"
               >
                 Confirm & import
-              </button>
+              </Button>
             </div>
           </div>
         </template>
 
-        <!-- Step 3: Importing / Result -->
         <template v-else-if="step === 'importing' || step === 'result'">
           <ImportSummary />
           <div v-if="step === 'result'" class="px-4 pb-4">
-            <button
-              type="button"
-              class="bg-anito-black text-white text-[11px] tracking-[0.2em] uppercase py-3 px-6 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
-              @click="resetToUpload"
-            >
+            <Button variant="primary" @click="resetToUpload">
               Import another file
-            </button>
+            </Button>
           </div>
         </template>
       </div>
-    </section>
+    </Card>
 
     <p class="text-anito-gray text-xs font-sans font-light mt-4 leading-relaxed">
       Attendance .dat format: PIN, Date (YYYY-MM-DD), Time (HH:MM:SS), Verify, In/Out. Max 10MB per file.
@@ -86,6 +69,7 @@ import { useImportStore } from '@/stores/import.js'
 import FileDropzone from '@/components/import/FileDropzone.vue'
 import ParsePreviewTable from '@/components/import/ParsePreviewTable.vue'
 import ImportSummary from '@/components/import/ImportSummary.vue'
+import { Button, Card } from '@/components/ui'
 
 const importStore = useImportStore()
 
