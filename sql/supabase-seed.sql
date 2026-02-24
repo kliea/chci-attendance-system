@@ -1,4 +1,4 @@
--- Klinth — seed data. Run in Supabase SQL Editor after supabase-schema.sql.
+-- Klinth — seed data. Run in Supabase SQL Editor after sql/supabase-schema.sql.
 -- Use this for reference data (holidays, teams). For test users, use the Node seeder (see docs/seeding.md).
 
 -- Example team (optional; manager_id can be set after you have a manager profile)

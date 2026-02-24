@@ -1,6 +1,6 @@
 # Database
 
-Supabase (PostgreSQL) schema used by Klinth. The schema is applied via **`supabase-schema.sql`** in the project root (run in Supabase SQL Editor).
+Supabase (PostgreSQL) schema used by Klinth. The schema is applied via **`sql/supabase-schema.sql`** (run in Supabase SQL Editor).
 
 ## Tables
 

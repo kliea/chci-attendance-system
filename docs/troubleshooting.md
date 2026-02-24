@@ -10,6 +10,6 @@ Common issues and fixes.
 
 - **Wrong redirect after login** — Check `profiles.role` for that user in Supabase.
 
-- **Register fails / RLS or profile error** — Ensure the `handle_new_user` trigger exists (see `supabase-schema.sql`). The app does not insert into `profiles` from the client; the trigger creates the profile on sign-up.
+- **Register fails / RLS or profile error** — Ensure the `handle_new_user` trigger exists (see `sql/supabase-schema.sql`). The app does not insert into `profiles` from the client; the trigger creates the profile on sign-up.
 
-- **406 or “table not in schema cache”** — Run `supabase-schema.sql` in the Supabase SQL Editor so the `profiles` table (and others) exist. Refresh the schema cache or restart the project if the error persists.
+- **406 or “table not in schema cache”** — Run `sql/supabase-schema.sql` in the Supabase SQL Editor so the `profiles` table (and others) exist. Refresh the schema cache or restart the project if the error persists.

@@ -2,10 +2,10 @@
 # Run from project root: bash scripts/commit-stages.sh
 set -e
 
-git add supabase-schema.sql supabase-migrate-to-staff.sql supabase-seed-employees.sql
+git add sql/supabase-schema.sql sql/supabase-migrate-to-staff.sql sql/supabase-seed-employees.sql
 git commit -m "feat(db): add staff table, teams, and attendance_logs keyed by staff"
 
-git add supabase-fix-profiles-500.sql
+git add sql/supabase-fix-profiles-500.sql
 git commit -m "fix(db): add is_manager() helper to resolve profiles RLS 500"
 
 git add src/stores/staff.js src/stores/attendance.js src/stores/employees.js src/stores/import.js

@@ -20,7 +20,7 @@ Minimal web-based team attendance management. Connects ZKTeco biometric devices 
 
    Get both from **Supabase Dashboard → Project Settings → API**.
 
-3. **Database** — Run **`supabase-schema.sql`** in the Supabase SQL Editor so tables and the sign-up trigger exist.
+3. **Database** — Run **`sql/supabase-schema.sql`** in the Supabase SQL Editor so tables and the sign-up trigger exist.
 
 4. **Run**
    ```bash

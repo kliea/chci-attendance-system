@@ -38,7 +38,7 @@ Get both from Supabase: **Project Settings → API** (Project URL and **anon pub
 The app expects the `public` schema tables to exist in Supabase. If you see *"Could not find the table 'public.profiles' in the schema cache"*:
 
 - Open your Supabase project → **SQL Editor**.
-- Run the script **`supabase-schema.sql`** in the project root (creates `profiles`, `teams`, `attendance_logs`, `rectification_requests`, `holidays`, RLS policies, and the trigger that creates a profile on sign-up).
+- Run the script **`sql/supabase-schema.sql`** in the Supabase SQL Editor (creates `profiles`, `teams`, `attendance_logs`, `rectification_requests`, `holidays`, RLS policies, and the trigger that creates a profile on sign-up).
 - If the error persists, refresh the schema cache or restart the project.
 
 Each Supabase Auth user should have a matching row in `profiles` with the correct `role` (`manager` or `employee`). See [database.md](database.md) for the schema.

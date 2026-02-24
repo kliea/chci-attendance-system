@@ -90,7 +90,7 @@ git commit -m "docs: add README and core documentation"
 ## 10. Chore: database schema and seed
 
 ```bash
-git add supabase-schema.sql supabase-seed.sql scripts/seed.js
+git add sql/supabase-schema.sql sql/supabase-seed.sql scripts/seed.js
 git commit -m "chore(db): add Supabase schema and seed script"
 ```
 
@@ -169,7 +169,7 @@ git commit -m "feat(views): add manager and employee placeholder views"
 git add README.md docs/README.md docs/setup.md docs/running.md docs/usage.md docs/auth-api.md docs/project-structure.md docs/database.md docs/import.md docs/troubleshooting.md
 git commit -m "docs: add README and core documentation"
 
-git add supabase-schema.sql supabase-seed.sql scripts/seed.js
+git add sql/supabase-schema.sql sql/supabase-seed.sql scripts/seed.js
 git commit -m "chore(db): add Supabase schema and seed script"
 
 git add docs/rbac.md docs/seeding.md docs/commit-conventions.md docs/first-push-commits.md

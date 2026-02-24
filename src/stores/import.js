@@ -97,7 +97,7 @@ export const useImportStore = defineStore('import', () => {
     if (unmapped.length > 0) {
       errorLog.value.push({
         batch: 0,
-        error: `${unmapped.length} bio_id(s) not found in staff: ${[...new Set(unmapped)].join(', ')}. Seed staff first (e.g. supabase-seed-employees.sql or Employees → Add from list).`,
+        error: `${unmapped.length} bio_id(s) not found in staff: ${[...new Set(unmapped)].join(', ')}. Seed staff first (e.g. sql/supabase-seed-employees.sql or Employees → Add from list).`,
       })
     }
 

@@ -6,9 +6,9 @@ Two ways to add initial data.
 
 Good for **reference data** only (no Auth users).
 
-1. Run **`supabase-schema.sql`** first if tables don’t exist.
+1. Run **`sql/supabase-schema.sql`** first if tables don’t exist.
 2. Open Supabase → **SQL Editor**.
-3. Run **`supabase-seed.sql`** from the project root.
+3. Run **`sql/supabase-seed.sql`** in the Supabase SQL Editor.
 
 This inserts example teams and holidays. It does **not** create login users (those live in `auth.users` and must be created via Auth or the Node seeder below).
 

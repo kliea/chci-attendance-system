@@ -1,4 +1,4 @@
--- Klinth — seed staff (employees). Run in Supabase SQL Editor after supabase-schema.sql.
+-- Klinth — seed staff (employees). Run in Supabase SQL Editor after sql/supabase-schema.sql.
 -- Staff roster: bio_id + full_name. No auth required. Use for attendance import.
 
 insert into public.staff (bio_id, full_name)
