@@ -18,19 +18,16 @@
     </svg>
     <p class="text-sm text-anito-gray font-sans font-light">Drop a .dat file here or click to browse</p>
     <p class="text-anito-gray text-xs mt-1 font-sans font-light">Attendance .dat only. Max 10MB. From ZKTeco devices.</p>
-    <button
-      type="button"
-      class="mt-4 border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase font-sans font-medium px-4 py-2 rounded hover:border-anito-blue-mid hover:text-anito-blue-mid transition-colors duration-150"
-      @click="fileInput?.click()"
-    >
+    <Button variant="secondary" class="mt-4" @click="fileInput?.click()">
       Choose file
-    </button>
+    </Button>
     <p v-if="error" class="text-red-600 text-sm mt-3">{{ error }}</p>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { Button } from '@/components/ui'
 
 const MAX_SIZE = 10 * 1024 * 1024 // 10MB
 
