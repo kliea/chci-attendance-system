@@ -75,6 +75,21 @@ create table if not exists public.holidays (
   created_at   timestamptz default now()
 );
 
+-- RPC: return staff not yet linked to a profile (for registration dropdown). Anon can call.
+create or replace function public.get_unregistered_staff()
+returns table (id uuid, bio_id text, full_name text)
+language sql security definer
+set search_path = public
+as $$
+  select s.id, s.bio_id, s.full_name
+  from public.staff s
+  left join public.profiles p on p.bio_id = s.bio_id and p.bio_id is not null
+  where p.id is null
+  order by s.full_name;
+$$;
+
+grant execute on function public.get_unregistered_staff() to anon;
+
 -- Helper: SECURITY DEFINER so RLS on profiles doesn't recurse (avoids 500 on profile fetch)
 create or replace function public.is_manager()
 returns boolean
