@@ -2,79 +2,100 @@
   <div class="max-w-4xl">
     <header class="mb-6">
       <h1 class="font-display font-light text-xl tracking-wide text-anito-black">My attendance</h1>
-      <p class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed">Your attendance log. Use filters to narrow by date.</p>
+      <p class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed">Your attendance log by day. Filter by month.</p>
     </header>
 
     <Card>
-      <CardHeaderFlex>
-        <div>
-          <Label for-id="my-date-from">From</Label>
-          <Input id="my-date-from" v-model="dateFrom" type="date" />
+      <CardHeaderFlex class="flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <Label for-id="my-month-filter">Month</Label>
+            <Input
+              id="my-month-filter"
+              v-model="selectedMonth"
+              type="month"
+              class="h-10"
+              @change="applyMonth"
+            />
+          </div>
+          <Button
+            variant="secondary"
+            class="h-10"
+            :disabled="attendance.loading"
+            @click="applyMonth"
+          >
+            {{ attendance.loading ? 'Loading…' : 'Apply' }}
+          </Button>
         </div>
-        <div>
-          <Label for-id="my-date-to">To</Label>
-          <Input id="my-date-to" v-model="dateTo" type="date" />
+        <div class="self-center text-sm font-sans text-anito-black">
+          Total rendered hours this month: <span class="font-mono font-medium">{{ totalHoursFormatted }}</span>
         </div>
-        <Button variant="secondary" :disabled="attendance.loading" @click="applyFilters">
-          {{ attendance.loading ? 'Loading…' : 'Apply' }}
-        </Button>
       </CardHeaderFlex>
 
       <div v-if="attendance.error" class="p-4 text-red-600 text-sm">{{ attendance.error }}</div>
-      <DataTable
+      <div v-else-if="attendance.loading" class="p-4 text-anito-gray text-sm">Loading…</div>
+      <AttendanceDayTable
         v-else
-        :columns="tableColumns"
-        :data="attendance.listWithName"
-        :empty="!attendance.loading && !attendance.list.length"
-        empty-text="No records for this period."
-      >
-        <template #row="{ row }">
-          <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ formatDate(row.date) }}</td>
-          <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ formatTime(row.time_in) }}</td>
-          <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ formatTime(row.time_out) }}</td>
-          <td class="px-4 py-3">
-            <Badge :status="row.status" />
-          </td>
-        </template>
-      </DataTable>
+        :day-rows="dayRows"
+        empty-text="No records for this month."
+      />
     </Card>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance.js'
-import { formatDate, formatTime } from '@/composables/useFormatters.js'
-import { Card, CardHeaderFlex, DataTable, Badge, Input, Label, Button } from '@/components/ui'
+import { buildDayRows, totalHoursRenderedInMonth, formatHours } from '@/composables/useAttendanceDayRows.js'
+import { Card, CardHeaderFlex, Input, Label, Button, AttendanceDayTable } from '@/components/ui'
 
 const attendance = useAttendanceStore()
-const dateFrom = ref('')
-const dateTo = ref('')
 
-const tableColumns = [
-  { key: 'date', label: 'Date' },
-  { key: 'time_in', label: 'Time in' },
-  { key: 'time_out', label: 'Time out' },
-  { key: 'status', label: 'Status' },
-]
+function currentYearMonth() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+}
+const selectedMonth = ref(currentYearMonth())
 
-onMounted(() => {
-  setDefaultDates()
-  applyFilters()
+const monthRange = computed(() => {
+  if (!selectedMonth.value || selectedMonth.value.length < 7) return { dateFrom: null, dateTo: null }
+  const [y, m] = selectedMonth.value.split('-').map(Number)
+  const first = new Date(y, m - 1, 1)
+  const last = new Date(y, m, 0)
+  const pad = (n) => String(n).padStart(2, '0')
+  return {
+    dateFrom: `${first.getFullYear()}-${pad(first.getMonth() + 1)}-${pad(first.getDate())}`,
+    dateTo: `${last.getFullYear()}-${pad(last.getMonth() + 1)}-${pad(last.getDate())}`,
+  }
 })
 
-function setDefaultDates() {
-  const now = new Date()
-  const first = new Date(now.getFullYear(), now.getMonth(), 1)
-  dateFrom.value = first.toISOString().slice(0, 10)
-  dateTo.value = now.toISOString().slice(0, 10)
+const dayRows = computed(() =>
+  buildDayRows(selectedMonth.value, attendance.list)
+)
+
+const totalHoursFormatted = computed(() =>
+  formatHours(totalHoursRenderedInMonth(selectedMonth.value, attendance.list)) ?? '—'
+)
+
+onMounted(() => {
+  setDefaultMonth()
+  applyMonth()
+})
+
+function setDefaultMonth() {
+  selectedMonth.value = currentYearMonth()
 }
 
-function applyFilters() {
+// Fetches current user's rows from attendance_logs for the selected month (profile.bio_id → staff_id).
+function applyMonth() {
+  const { dateFrom, dateTo } = monthRange.value
+  if (!dateFrom || !dateTo) return
   attendance.fetchAttendance({
     forCurrentUserOnly: true,
-    dateFrom: dateFrom.value || undefined,
-    dateTo: dateTo.value || undefined,
+    dateFrom,
+    dateTo,
   })
 }
 </script>
