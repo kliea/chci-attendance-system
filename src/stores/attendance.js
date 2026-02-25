@@ -1,5 +1,6 @@
 /**
- * Attendance logs (manager: all; employee: own via profile.bio_id = staff.bio_id). Reads from attendance_logs + staff.
+ * Attendance log records from table attendance_logs (+ staff join).
+ * Manager: all rows; employee: own only via profile.bio_id → staff.bio_id.
  */
 
 import { defineStore } from 'pinia'
@@ -26,7 +27,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
   )
 
   /**
-   * Fetch attendance. Manager: optional dateFrom, dateTo, staffId, status, page, pageSize. Employee: own only (via profile.bio_id → staff).
+   * Fetch rows from attendance_logs. Manager: optional dateFrom, dateTo, staffId, status, page, pageSize. Employee: own only (profile.bio_id → staff_id).
    */
   async function fetchAttendance(opts = {}) {
     loading.value = true
@@ -48,6 +49,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
         if (profile?.bio_id) {
           const { data: staffRow } = await supabase.from('staff').select('id').eq('bio_id', profile.bio_id).maybeSingle()
           if (staffRow?.id) query = query.eq('staff_id', staffRow.id)
+          // Employees need RLS "Users can select own staff row" on staff so this lookup and the attendance_logs→staff join succeed.
         }
       }
     } else if (opts.staffId) {
