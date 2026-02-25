@@ -27,8 +27,18 @@
             {{ attendance.loading ? 'Loading…' : 'Apply' }}
           </Button>
         </div>
-        <div class="self-center text-sm font-sans text-anito-black">
-          Total rendered hours this month: <span class="font-mono font-medium">{{ totalHoursFormatted }}</span>
+        <div class="flex flex-wrap items-center gap-3 self-center">
+          <span class="text-sm font-sans text-anito-black">
+            Total rendered hours this month: <span class="font-mono font-medium">{{ totalHoursFormatted }}</span>
+          </span>
+          <PrintDailyLogsButton
+            size="sm"
+            :employee-name="employeeName"
+            :month-label="monthLabel"
+            :selected-month="selectedMonth"
+            :logs="attendance.list"
+            :day-rows="dayRows"
+          />
         </div>
       </CardHeaderFlex>
 
@@ -46,10 +56,20 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance.js'
+import { useAuthStore } from '@/stores/auth.js'
 import { buildDayRows, totalHoursRenderedInMonth, formatHours } from '@/composables/useAttendanceDayRows.js'
-import { Card, CardHeaderFlex, Input, Label, Button, AttendanceDayTable } from '@/components/ui'
+import { Card, CardHeaderFlex, Input, Label, Button, AttendanceDayTable, PrintDailyLogsButton } from '@/components/ui'
 
 const attendance = useAttendanceStore()
+const auth = useAuthStore()
+
+const employeeName = computed(() => auth.fullName || auth.profile?.full_name || '')
+const monthLabel = computed(() => {
+  const ym = selectedMonth.value
+  if (!ym || ym.length < 7) return ''
+  const [y, m] = ym.split('-').map(Number)
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+})
 
 function currentYearMonth() {
   const now = new Date()

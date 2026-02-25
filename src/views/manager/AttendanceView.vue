@@ -58,16 +58,30 @@
       </DataTable>
     </Card>
 
-    <Dialog v-model="showDetailModal" max-width="max-w-3xl">
+    <div class="no-print">
+      <Dialog v-model="showDetailModal" max-width="max-w-3xl">
       <template #header>
         <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
           Daily logs — {{ selectedEmployee?.full_name }} ({{ selectedEmployee?.bio_id }})
         </h2>
       </template>
       <template #actions>
-        <Button variant="secondary" size="sm" @click="printDailyLogs">
-          Print daily logs
+        <Button
+          variant="secondary"
+          size="sm"
+          :disabled="appendix24TemplateLoading"
+          @click="downloadAppendix24FillerTemplate"
+        >
+          {{ appendix24TemplateLoading ? 'Generating…' : 'Download filler template' }}
         </Button>
+        <PrintDailyLogsButton
+          size="sm"
+          :employee-name="selectedEmployee?.full_name ?? ''"
+          :month-label="formatMonthLabel(selectedMonth)"
+          :selected-month="selectedMonth"
+          :logs="detailLogs"
+          :day-rows="detailDayRows"
+        />
       </template>
       <div class="p-4">
         <AttendanceDayTable
@@ -76,6 +90,7 @@
         />
       </div>
     </Dialog>
+    </div>
 
     <div id="dtr-print-area" class="hidden print:block p-6">
       <div v-if="printPayload" class="print-content">
@@ -118,8 +133,9 @@ import { useAttendanceStore } from '@/stores/attendance.js'
 import { useStaffStore } from '@/stores/staff.js'
 import { useEmployeesStore } from '@/stores/employees.js'
 import { groupLogsByStaff } from '@/composables/useHoursRendered.js'
-import { buildDayRows } from '@/composables/useAttendanceDayRows.js'
+import { buildDayRows, totalHoursRenderedInMonth } from '@/composables/useAttendanceDayRows.js'
 import { formatDate } from '@/composables/useFormatters.js'
+import { getAppendix24TemplateBlob } from '@/composables/useFillAppendix24Pdf.js'
 import {
   Button,
   Card,
@@ -130,6 +146,7 @@ import {
   Input,
   Label,
   AttendanceDayTable,
+  PrintDailyLogsButton,
 } from '@/components/ui'
 
 const attendance = useAttendanceStore()
@@ -143,6 +160,7 @@ const showDetailModal = computed({
   set: (v) => { if (!v) selectedEmployee.value = null },
 })
 const printPayload = ref(null)
+const appendix24TemplateLoading = ref(false)
 
 const summaryColumns = [
   { key: 'full_name', label: 'Name' },
@@ -177,11 +195,13 @@ const staffSummary = computed(() => groupLogsByStaff(attendance.list))
 
 const employeeRows = computed(() => {
   return staff.list.map((s) => {
-    const sum = staffSummary.value[s.id] || { hours: 0, daysPresent: 0 }
+    const sum = staffSummary.value[s.id] || { hours: 0, daysPresent: 0, logs: [] }
+    const logs = sum.logs || []
+    const hours = totalHoursRenderedInMonth(selectedMonth.value, logs)
     return {
       ...s,
       program: profileByBioId.value[s.bio_id]?.program ?? '—',
-      hours: sum.hours,
+      hours,
       daysPresent: sum.daysPresent,
     }
   })
@@ -220,21 +240,31 @@ function openDetail(row) {
   selectedEmployee.value = row
 }
 
-function printDailyLogs() {
-  if (!selectedEmployee.value) return
-  printPayload.value = {
-    type: 'daily',
-    title: `Daily logs — ${selectedEmployee.value.full_name} (${selectedEmployee.value.bio_id}) — ${monthRange.value.dateFrom} to ${monthRange.value.dateTo}`,
-    dayRows: detailDayRows.value,
+function formatMonthLabel(ym) {
+  if (!ym || ym.length < 7) return ''
+  const [y, m] = ym.split('-').map(Number)
+  const d = new Date(y, m - 1, 1)
+  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+async function downloadAppendix24FillerTemplate() {
+  appendix24TemplateLoading.value = true
+  try {
+    const { blobUrl } = await getAppendix24TemplateBlob()
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = 'DTR_Appendix24_filler_template.pdf'
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000)
+  } catch (err) {
+    console.error('Filler template PDF failed:', err)
+  } finally {
+    appendix24TemplateLoading.value = false
   }
-  setTimeout(() => {
-    window.print()
-  }, 100)
 }
 
 function printCurrent() {
   if (selectedEmployee.value) {
-    printDailyLogs()
     return
   }
   printPayload.value = {
@@ -261,6 +291,8 @@ onMounted(async () => {
   }
   #dtr-print-area {
     display: block !important;
+    padding: 0.5in;
+    max-width: 100%;
   }
 }
 </style>
