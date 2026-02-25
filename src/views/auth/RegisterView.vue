@@ -1,8 +1,12 @@
 <template>
   <div class="min-h-screen bg-anito-black flex items-center justify-center p-6">
     <div class="w-full max-w-sm">
-      <h1 class="font-display font-light text-2xl tracking-wide text-white mb-8 text-center">
-        ANITO<span class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"></span>
+      <h1
+        class="font-display font-light text-2xl tracking-wide text-white mb-8 text-center"
+      >
+        ANITO<span
+          class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"
+        ></span>
       </h1>
       <form class="space-y-5" @submit.prevent="handleSubmit">
         <div>
@@ -57,7 +61,9 @@
             placeholder="••••••••"
             variant="dark"
           />
-          <p class="text-anito-gray text-xs font-sans font-light mt-1">At least 6 characters</p>
+          <p class="text-anito-gray text-xs font-sans font-light mt-1">
+            At least 6 characters
+          </p>
         </div>
         <p v-if="auth.error" class="text-red-500 text-sm">{{ auth.error }}</p>
         <Button type="submit" variant="primaryInverted" size="lg" :disabled="loading">
@@ -66,7 +72,11 @@
       </form>
       <p class="text-center text-sm text-anito-gray font-sans font-light mt-4">
         Already have an account?
-        <router-link to="/login" class="text-anito-blue-mid hover:underline transition-colors">Sign in</router-link>
+        <router-link
+          to="/login"
+          class="text-anito-blue-mid hover:underline transition-colors"
+          >Sign in</router-link
+        >
       </p>
     </div>
   </div>
@@ -79,8 +89,8 @@ import { useAuthStore } from '@/stores/auth.js'
 import { supabase } from '@/lib/supabase.js'
 import { Button, Input, Label } from '@/components/ui'
 
-const router = useRouter()
-const auth = useAuthStore()
+const router = useRouter();
+const auth = useAuthStore();
 
 const unregisteredStaff = ref([])
 const staffLoading = ref(false)

@@ -6,11 +6,21 @@
         CHCI<span class="inline-block w-3 h-3 rounded-full bg-anito-blue-mid mb-1 ml-1 align-middle"></span>
       </h1>
       <div class="w-8 h-0.5 bg-anito-blue-mid my-4"></div>
-      <p class="text-[10px] tracking-[0.3em] uppercase text-anito-gray font-sans font-light">OJT Attendance Monitoring</p>
+      <p
+        class="text-[10px] tracking-[0.3em] uppercase text-anito-gray font-sans font-light"
+      >
+        OJT Attendance Monitoring
+      </p>
     </div>
-    <div class="flex-1 md:w-[40%] bg-anito-white flex flex-col items-center justify-center p-8">
+    <div
+      class="flex-1 md:w-[40%] bg-anito-white flex flex-col items-center justify-center p-8"
+    >
       <div class="w-full max-w-sm space-y-6">
-        <h2 class="font-display font-light text-2xl tracking-wide text-anito-black md:hidden text-center">ANITO</h2>
+        <h2
+          class="font-display font-light text-2xl tracking-wide text-anito-black md:hidden text-center"
+        >
+          ANITO
+        </h2>
         <form class="space-y-5" @submit.prevent="handleSubmit">
           <div>
             <Label for-id="email">Email</Label>
@@ -41,7 +51,11 @@
         </form>
         <p class="text-center text-sm text-anito-gray font-sans font-light">
           No account?
-          <router-link to="/register" class="text-anito-blue-mid hover:underline transition-colors">Create one</router-link>
+          <router-link
+            to="/register"
+            class="text-anito-blue-mid hover:underline transition-colors"
+            >Create one</router-link
+          >
         </p>
       </div>
     </div>
@@ -54,23 +68,34 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 import { Button, Input, Label } from '@/components/ui'
 
-const router = useRouter()
-const route = useRoute()
-const auth = useAuthStore()
+const router = useRouter();
+const route = useRoute();
+const auth = useAuthStore();
 
-const email = ref('')
-const password = ref('')
-const loading = ref(false)
+const email = ref("");
+const password = ref("");
+const loading = ref(false);
 
-onMounted(() => auth.clearError())
+onMounted(() => auth.clearError());
 
 async function handleSubmit() {
-  loading.value = true
-  const { ok } = await auth.signIn(email.value, password.value)
-  loading.value = false
-  if (ok) {
-    const redirect = route.query.redirect ?? (auth.isManager ? '/dashboard' : '/my-attendance')
-    router.push(redirect)
+  if (loading.value) return; // Prevent multiple submissions
+
+  loading.value = true;
+
+  try {
+    const { ok } = await auth.signIn(email.value, password.value);
+
+    if (ok) {
+      const redirect =
+        route.query.redirect ??
+        (auth.isManager ? "/dashboard" : "/my-attendance");
+      router.push(redirect);
+    }
+  } catch (err) {
+    console.error("Login submit error:", err);
+  } finally {
+    loading.value = false;
   }
 }
 </script>

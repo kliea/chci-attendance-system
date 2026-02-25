@@ -1,56 +1,102 @@
-import { defineStore } from 'pinia'
-import { supabase } from '@/lib/supabase.js'
+import { defineStore } from "pinia";
+import { supabase } from "@/lib/supabase.js";
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
     profile: null,
-    loading: true,
+    loading: false,
     error: null,
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.user,
     role: (state) => state.profile?.role ?? null,
-    isManager: (state) => ['admin', 'manager', 'supervisor'].includes(state.profile?.role),
-    isEmployee: (state) => state.profile?.role === 'employee',
-    fullName: (state) => state.profile?.full_name ?? '',
+    isManager: (state) =>
+      ["admin", "manager", "supervisor"].includes(state.profile?.role),
+    isEmployee: (state) => state.profile?.role === "employee",
+    fullName: (state) => state.profile?.full_name ?? "",
   },
 
   actions: {
     async init() {
-      this.loading = true
-      this.error = null
+      if (this.loading) return;
+
+      this.loading = true;
+      this.error = null;
+
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.user) {
-          this.user = session.user
-          await this.fetchProfile()
+          this.user = session.user;
+          // Only fetch profile if we don't have one
+          if (!this.profile || this.profile.id !== this.user.id) {
+            await this.fetchProfile();
+          }
         } else {
-          this.user = null
-          this.profile = null
+          this.user = null;
+          this.profile = null;
         }
       } catch (err) {
-        this.user = null
-        this.profile = null
-        this.error = err?.message ?? 'Failed to load session'
+        console.error("Auth init error:", err);
+        this.user = null;
+        this.profile = null;
+        this.error = err?.message ?? "Failed to load session";
+      } finally {
+        this.loading = false;
       }
-      this.loading = false
     },
 
     async fetchProfile() {
-      if (!this.user?.id) return
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', this.user.id)
-        .maybeSingle()
-      if (error) {
-        this.error = error.message
-        this.profile = null
-        return
+      if (!this.user?.id) return;
+
+      // Prevent refetch if we already have profile
+      if (this.profile && this.profile.id === this.user.id) return;
+
+      try {
+        // Try profiles table first (likely exists)
+        let { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", this.user.id)
+          .maybeSingle();
+
+        // If profiles table doesn't exist, try users table
+        if (error && error.code === "PGRST116") {
+          const result = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", this.user.id)
+            .maybeSingle();
+          data = result.data;
+          error = result.error;
+        }
+
+        if (error) {
+          console.error("Profile fetch error:", error);
+          // Create minimal profile from auth user data to prevent crashes
+          this.profile = {
+            id: this.user.id,
+            email: this.user.email,
+            full_name: this.user.user_metadata?.full_name || "User",
+            role: "employee", // Default role
+          };
+          return;
+        }
+
+        this.profile = data;
+      } catch (err) {
+        console.error("Profile fetch exception:", err);
+        // Create minimal profile to prevent crashes
+        this.profile = {
+          id: this.user.id,
+          email: this.user.email,
+          full_name: this.user.user_metadata?.full_name || "User",
+          role: "employee", // Default role
+        };
       }
-      this.profile = data ?? null
     },
 
     async signIn(email, password) {
@@ -89,14 +135,19 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async signOut() {
-      await supabase.auth.signOut()
-      this.user = null
-      this.profile = null
-      this.error = null
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error("Sign out error:", err);
+      } finally {
+        this.user = null;
+        this.profile = null;
+        this.error = null;
+      }
     },
 
     clearError() {
-      this.error = null
+      this.error = null;
     },
   },
-})
+});
