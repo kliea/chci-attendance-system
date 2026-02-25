@@ -5,27 +5,28 @@
         <h1 class="font-display font-light text-xl tracking-wide text-anito-black">Employee DTR</h1>
         <p class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed">Per-employee summary and daily logs. Filter by month, view or print DTR.</p>
       </div>
-      <div class="flex items-center gap-2 no-print">
-        <Button variant="secondary" :disabled="!canPrint" @click="printCurrent">
-          Print DTR
-        </Button>
-      </div>
     </header>
 
     <Card class="no-print">
       <CardHeaderFlex>
         <div>
-          <Label for-id="month-filter">Month</Label>
-          <Input
-            id="month-filter"
-            v-model="selectedMonth"
-            type="month"
-            @change="applyMonth"
-          />
-        </div>
-        <Button variant="secondary" :disabled="attendance.loading" @click="applyMonth">
-          {{ attendance.loading ? 'Loading…' : 'Apply' }}
-        </Button>
+            <Label for-id="my-month-filter">Month</Label>
+            <Input
+              id="my-month-filter"
+              v-model="selectedMonth"
+              type="month"
+              class="h-10"
+              @change="applyMonth"
+            />
+          </div>
+          <Button
+            variant="secondary"
+            class="h-10"
+            :disabled="attendance.loading"
+            @click="applyMonth"
+          >
+            {{ attendance.loading ? 'Loading…' : 'Apply' }}
+          </Button>
       </CardHeaderFlex>
 
       <div v-if="attendance.error" class="p-4 text-red-600 text-sm">{{ attendance.error }}</div>
@@ -69,21 +70,10 @@
         </Button>
       </template>
       <div class="p-4">
-        <DataTable
-          :columns="detailColumns"
-          :data="detailLogs"
-          :empty="!detailLogs.length"
+        <AttendanceDayTable
+          :day-rows="detailDayRows"
           empty-text="No daily logs for this month."
-        >
-          <template #row="{ row }">
-            <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ formatDate(row.date) }}</td>
-            <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ formatTime(row.time_in) }}</td>
-            <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ formatTime(row.time_out) }}</td>
-            <td class="px-4 py-3">
-              <Badge :status="row.status" />
-            </td>
-          </template>
-        </DataTable>
+        />
       </div>
     </Dialog>
 
@@ -91,7 +81,7 @@
       <div v-if="printPayload" class="print-content">
         <h2 class="font-display text-lg font-light mb-2">Employee DTR</h2>
         <p class="text-sm text-anito-gray mb-4">{{ printPayload.title }}</p>
-        <table class="w-full text-sm text-left border border-gray-300">
+        <table v-if="printPayload.type === 'summary'" class="w-full text-sm text-left border border-gray-300">
           <thead>
             <tr class="bg-gray-100">
               <th class="px-3 py-2 text-left font-medium">Name</th>
@@ -101,7 +91,7 @@
               <th class="px-3 py-2 text-left font-medium">Days</th>
             </tr>
           </thead>
-          <tbody v-if="printPayload.type === 'summary'">
+          <tbody>
             <tr v-for="r in printPayload.rows" :key="r.id" class="border-t border-gray-200">
               <td class="px-3 py-2">{{ r.full_name }}</td>
               <td class="px-3 py-2">{{ r.bio_id || '—' }}</td>
@@ -111,24 +101,12 @@
             </tr>
           </tbody>
         </table>
-        <table v-if="printPayload.type === 'daily'" class="w-full text-sm mt-4 border border-gray-300">
-          <thead>
-            <tr class="bg-gray-100">
-              <th class="px-3 py-2 text-left font-medium">Date</th>
-              <th class="px-3 py-2 text-left font-medium">Time in</th>
-              <th class="px-3 py-2 text-left font-medium">Time out</th>
-              <th class="px-3 py-2 text-left font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="log in printPayload.logs" :key="log.id" class="border-t border-gray-200">
-              <td class="px-3 py-2">{{ formatDate(log.date) }}</td>
-              <td class="px-3 py-2">{{ formatTime(log.time_in) }}</td>
-              <td class="px-3 py-2">{{ formatTime(log.time_out) }}</td>
-              <td class="px-3 py-2">{{ log.status || '—' }}</td>
-            </tr>
-          </tbody>
-        </table>
+        <AttendanceDayTable
+          v-else-if="printPayload.type === 'daily'"
+          :day-rows="printPayload.dayRows"
+          empty-text="No daily logs for this month."
+          :print-mode="true"
+        />
       </div>
     </div>
   </div>
@@ -140,7 +118,8 @@ import { useAttendanceStore } from '@/stores/attendance.js'
 import { useStaffStore } from '@/stores/staff.js'
 import { useEmployeesStore } from '@/stores/employees.js'
 import { groupLogsByStaff } from '@/composables/useHoursRendered.js'
-import { formatDate, formatTime } from '@/composables/useFormatters.js'
+import { buildDayRows } from '@/composables/useAttendanceDayRows.js'
+import { formatDate } from '@/composables/useFormatters.js'
 import {
   Button,
   Card,
@@ -150,6 +129,7 @@ import {
   Badge,
   Input,
   Label,
+  AttendanceDayTable,
 } from '@/components/ui'
 
 const attendance = useAttendanceStore()
@@ -173,21 +153,15 @@ const summaryColumns = [
   { key: 'actions', label: 'Actions', class: 'w-24' },
 ]
 
-const detailColumns = [
-  { key: 'date', label: 'Date' },
-  { key: 'time_in', label: 'Time in' },
-  { key: 'time_out', label: 'Time out' },
-  { key: 'status', label: 'Status' },
-]
-
 const monthRange = computed(() => {
   if (!selectedMonth.value || selectedMonth.value.length < 7) return { dateFrom: null, dateTo: null }
   const [y, m] = selectedMonth.value.split('-').map(Number)
   const first = new Date(y, m - 1, 1)
   const last = new Date(y, m, 0)
+  const pad = (n) => String(n).padStart(2, '0')
   return {
-    dateFrom: first.toISOString().slice(0, 10),
-    dateTo: last.toISOString().slice(0, 10),
+    dateFrom: `${first.getFullYear()}-${pad(first.getMonth() + 1)}-${pad(first.getDate())}`,
+    dateTo: `${last.getFullYear()}-${pad(last.getMonth() + 1)}-${pad(last.getDate())}`,
   }
 })
 
@@ -220,6 +194,10 @@ const detailLogs = computed(() => {
     .sort((a, b) => (a.date < b.date ? -1 : 1))
 })
 
+const detailDayRows = computed(() =>
+  buildDayRows(selectedMonth.value, detailLogs.value)
+)
+
 const canPrint = computed(() => {
   if (selectedEmployee.value) return true
   return employeeRows.value.length > 0
@@ -247,7 +225,7 @@ function printDailyLogs() {
   printPayload.value = {
     type: 'daily',
     title: `Daily logs — ${selectedEmployee.value.full_name} (${selectedEmployee.value.bio_id}) — ${monthRange.value.dateFrom} to ${monthRange.value.dateTo}`,
-    logs: detailLogs.value,
+    dayRows: detailDayRows.value,
   }
   setTimeout(() => {
     window.print()
