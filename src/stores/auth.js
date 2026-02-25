@@ -100,57 +100,38 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async signIn(email, password) {
-      this.error = null;
-
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          this.error = error.message;
-          return { ok: false, error: error.message };
-        }
-
-        this.user = data.user;
-        await this.fetchProfile();
-        return { ok: true };
-      } catch (err) {
-        console.error("Sign in error:", err);
-        this.error = err.message;
-        return { ok: false, error: err.message };
+      this.error = null
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        this.error = error.message
+        return { ok: false, error: error.message }
       }
+      this.user = data.user
+      await this.fetchProfile()
+      return { ok: true }
     },
 
-    async signUp(email, password, { fullName = "" } = {}) {
-      this.error = null;
-
-      try {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { full_name: fullName } },
-        });
-
-        if (error) {
-          this.error = error.message;
-          return { ok: false, error: error.message };
-        }
-
-        if (!data.user) {
-          this.error = "Sign up failed";
-          return { ok: false, error: "Sign up failed" };
-        }
-
-        this.user = data.user;
-        await this.fetchProfile();
-        return { ok: true };
-      } catch (err) {
-        console.error("Sign up error:", err);
-        this.error = err.message;
-        return { ok: false, error: err.message };
+    async signUp(email, password, { fullName = '', bioId = null } = {}) {
+      this.error = null
+      const meta = { full_name: fullName }
+      if (bioId) meta.bio_id = bioId
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: meta },
+      })
+      if (error) {
+        this.error = error.message
+        return { ok: false, error: error.message }
       }
+      if (!data.user) {
+        this.error = 'Sign up failed'
+        return { ok: false, error: 'Sign up failed' }
+      }
+      this.user = data.user
+      // Profile is created by DB trigger (handle_new_user) so we don't hit RLS on insert
+      await this.fetchProfile()
+      return { ok: true }
     },
 
     async signOut() {

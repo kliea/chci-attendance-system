@@ -2,7 +2,7 @@
   <aside class="w-52 shrink-0 bg-anito-black flex flex-col">
     <div class="p-4 border-b border-[#1e2228]">
       <span class="font-display font-light text-2xl tracking-[0.22em] uppercase text-white">
-        ANITO<span class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"></span>
+        CHCI<span class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"></span>
       </span>
       <p class="text-[9px] tracking-[0.3em] uppercase text-anito-gray mt-1 font-sans font-light">OJT Attendance System</p>
     </div>

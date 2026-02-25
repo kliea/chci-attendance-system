@@ -6,19 +6,16 @@
     <div class="flex items-center gap-4">
       <span class="font-display italic text-sm text-anito-gray">{{ currentDate }}</span>
       <span class="text-anito-gray text-sm font-sans font-light">{{ auth.fullName }}</span>
-      <button
-        type="button"
-        class="text-anito-gray hover:text-anito-black text-[10px] tracking-[0.2em] uppercase font-sans font-medium transition-colors duration-150"
-        @click="handleLogout"
-      >
+      <Button variant="ghost" @click="handleLogout">
         Log out
-      </button>
+      </Button>
     </div>
   </header>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { Button } from '@/components/ui'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.js'
 
@@ -40,7 +37,7 @@ const pageTitle = computed(() => {
     'my-attendance': 'My Attendance',
     rectify: 'Rectify',
   }
-  return titles[name] ?? 'ANITO'
+  return titles[name] ?? 'CHCI'
 })
 
 async function handleLogout() {
