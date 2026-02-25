@@ -56,23 +56,11 @@ export const useAuthStore = defineStore("auth", {
       if (this.profile && this.profile.id === this.user.id) return;
 
       try {
-        // Try profiles table first (likely exists)
-        let { data, error } = await supabase
+        const { data, error } = await supabase
           .from("profiles")
           .select("*")
           .eq("id", this.user.id)
           .maybeSingle();
-
-        // If profiles table doesn't exist, try users table
-        if (error && error.code === "PGRST116") {
-          const result = await supabase
-            .from("users")
-            .select("*")
-            .eq("id", this.user.id)
-            .maybeSingle();
-          data = result.data;
-          error = result.error;
-        }
 
         if (error) {
           console.error("Profile fetch error:", error);

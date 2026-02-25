@@ -6,10 +6,10 @@ ALTER TABLE rectification_requests
 ADD COLUMN IF NOT EXISTS time_in TIME,
 ADD COLUMN IF NOT EXISTS time_out TIME;
 
--- Add status and review fields
+-- Add status and review fields (reviewed_by references public.profiles, not users)
 ALTER TABLE rectification_requests 
 ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES users(id),
+ADD COLUMN IF NOT EXISTS reviewed_by UUID REFERENCES public.profiles(id),
 ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS review_notes TEXT;
 
@@ -38,16 +38,12 @@ ALTER TABLE rectification_requests ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own rectification requests" ON rectification_requests
     FOR SELECT USING (auth.uid() = user_id);
 
--- Policy: Managers can view all rectification requests
+-- Policy: Managers can view all rectification requests (uses public.profiles)
 CREATE POLICY "Managers can view all rectification requests" ON rectification_requests
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.userrole_id IN (
-                SELECT id FROM userrole 
-                WHERE role_name IN ('admin', 'manager', 'supervisor')
-            )
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role IN ('admin', 'manager', 'supervisor')
         )
     );
 
@@ -55,16 +51,12 @@ CREATE POLICY "Managers can view all rectification requests" ON rectification_re
 CREATE POLICY "Users can create own rectification requests" ON rectification_requests
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Policy: Managers can update requests (approve/reject)
+-- Policy: Managers can update requests (approve/reject) (uses public.profiles)
 CREATE POLICY "Managers can update rectification requests" ON rectification_requests
     FOR UPDATE USING (
         EXISTS (
-            SELECT 1 FROM users 
-            WHERE users.id = auth.uid() 
-            AND users.userrole_id IN (
-                SELECT id FROM userrole 
-                WHERE role_name IN ('admin', 'manager', 'supervisor')
-            )
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role IN ('admin', 'manager', 'supervisor')
         )
     );
 

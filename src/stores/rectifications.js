@@ -26,26 +26,38 @@ export const useRectificationsStore = defineStore("rectifications", {
       this.error = null;
 
       try {
-        const { data, error } = await supabase
+        const { data: rows, error } = await supabase
           .from("rectification_requests")
-          .select(
-            `
-            *,
-            users!rectification_requests_user_id_fkey (
-              fname,
-              lname,
-              bio_id
-            ),
-            reviewers:users!rectification_requests_reviewed_by_fkey (
-              fname,
-              lname
-            )
-          `,
-          )
+          .select("*")
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        this.requests = data || [];
+
+        // Resolve requester and reviewer from profiles (no embed to avoid "users" relation)
+        const profileIds = new Set();
+        (rows || []).forEach((r) => {
+          if (r.user_id) profileIds.add(r.user_id);
+          if (r.reviewed_by) profileIds.add(r.reviewed_by);
+        });
+        const ids = [...profileIds];
+        const profileMap = {};
+        if (ids.length) {
+          const { data: profiles, error: profError } = await supabase
+            .from("profiles")
+            .select("id, full_name, bio_id")
+            .in("id", ids);
+          if (!profError && profiles) {
+            profiles.forEach((p) => {
+              profileMap[p.id] = p;
+            });
+          }
+        }
+
+        this.requests = (rows || []).map((r) => ({
+          ...r,
+          requester: profileMap[r.user_id] ?? null,
+          reviewer: profileMap[r.reviewed_by] ?? null,
+        }));
       } catch (error) {
         this.error = error.message;
         console.error("Error fetching rectification requests:", error);
@@ -65,12 +77,10 @@ export const useRectificationsStore = defineStore("rectifications", {
           .insert({
             user_id: requestData.userId,
             attendance_id: requestData.attendanceId || null,
-            rectification_title: requestData.title,
-            description: requestData.description,
-            rectification_type: requestData.type,
             date: requestData.date,
-            time_in: requestData.timeIn || null,
-            time_out: requestData.timeOut || null,
+            reason: requestData.reason,
+            requested_in: requestData.requestedIn || null,
+            requested_out: requestData.requestedOut || null,
             status: "pending",
           })
           .select()
@@ -90,7 +100,7 @@ export const useRectificationsStore = defineStore("rectifications", {
       }
     },
 
-    async updateRequestStatus(requestId, status, reviewedBy, notes = null) {
+    async updateRequestStatus(requestId, status, reviewedBy) {
       this.submitting = true;
       this.error = null;
 
@@ -101,10 +111,6 @@ export const useRectificationsStore = defineStore("rectifications", {
           reviewed_at: new Date().toISOString(),
         };
 
-        if (notes) {
-          updateData.review_notes = notes;
-        }
-
         const { data, error } = await supabase
           .from("rectification_requests")
           .update(updateData)
@@ -114,8 +120,8 @@ export const useRectificationsStore = defineStore("rectifications", {
 
         if (error) throw error;
 
-        // If approved, update attendance record
-        if (status === "approved" && data.attendance_id) {
+        // If approved, update attendance_logs (by staff_id from profile)
+        if (status === "approved") {
           await this.updateAttendanceRecord(data);
         }
 
@@ -132,77 +138,80 @@ export const useRectificationsStore = defineStore("rectifications", {
 
     async updateAttendanceRecord(rectificationRequest) {
       try {
-        // First, try to find an existing attendance record for the date
-        const { data: existingRecord, error: fetchError } = await supabase
-          .from("attendance")
-          .select("*")
-          .eq("user_id", rectificationRequest.user_id)
-          .eq("date", rectificationRequest.date)
-          .single();
-
-        if (fetchError && fetchError.code !== "PGRST116") {
-          // PGRST116 is "not found"
-          throw fetchError;
+        // Resolve staff_id from user_id (profile) via profile.bio_id → staff.id
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("bio_id")
+          .eq("id", rectificationRequest.user_id)
+          .maybeSingle();
+        if (!profile?.bio_id) {
+          console.warn("Rectification: profile has no bio_id, cannot update attendance_logs");
+          return null;
         }
+        const { data: staffRow } = await supabase
+          .from("staff")
+          .select("id")
+          .eq("bio_id", profile.bio_id)
+          .maybeSingle();
+        if (!staffRow?.id) {
+          console.warn("Rectification: no staff for bio_id", profile.bio_id);
+          return null;
+        }
+        const staffId = staffRow.id;
 
-        let attendanceRecord;
+        const { data: existingRecord, error: fetchError } = await supabase
+          .from("attendance_logs")
+          .select("id")
+          .eq("staff_id", staffId)
+          .eq("date", rectificationRequest.date)
+          .maybeSingle();
+
+        if (fetchError) throw fetchError;
+
+        const updatePayload = {};
+        if (rectificationRequest.requested_in != null) updatePayload.time_in = rectificationRequest.requested_in;
+        if (rectificationRequest.requested_out != null) updatePayload.time_out = rectificationRequest.requested_out;
 
         if (existingRecord) {
-          // Update existing record
-          const updateData = {
-            status: "rectified",
-          };
-
-          if (rectificationRequest.time_in) {
-            updateData.time_in = rectificationRequest.time_in;
+          if (Object.keys(updatePayload).length) {
+            const { data, error } = await supabase
+              .from("attendance_logs")
+              .update(updatePayload)
+              .eq("id", existingRecord.id)
+              .select()
+              .single();
+            if (error) throw error;
+            // Link rectification to this log if not already
+            if (!rectificationRequest.attendance_id) {
+              await supabase
+                .from("rectification_requests")
+                .update({ attendance_id: data.id })
+                .eq("id", rectificationRequest.id);
+            }
+            return data;
           }
-          if (rectificationRequest.time_out) {
-            updateData.time_out = rectificationRequest.time_out;
-          }
-
-          const { data, error } = await supabase
-            .from("attendance")
-            .update(updateData)
-            .eq("attendance_id", existingRecord.attendance_id)
-            .select()
-            .single();
-
-          if (error) throw error;
-          attendanceRecord = data;
-        } else {
-          // Create new attendance record
-          const newRecordData = {
-            user_id: rectificationRequest.user_id,
-            date: rectificationRequest.date,
-            status: "rectified",
-          };
-
-          if (rectificationRequest.time_in) {
-            newRecordData.time_in = rectificationRequest.time_in;
-          }
-          if (rectificationRequest.time_out) {
-            newRecordData.time_out = rectificationRequest.time_out;
-          }
-
-          const { data, error } = await supabase
-            .from("attendance")
-            .insert(newRecordData)
-            .select()
-            .single();
-
-          if (error) throw error;
-          attendanceRecord = data;
+          return existingRecord;
         }
 
-        // Update the rectification request to link to the attendance record
-        const { error: updateError } = await supabase
+        // Insert new attendance_logs row (missing record case)
+        const insertPayload = {
+          staff_id: staffId,
+          date: rectificationRequest.date,
+          status: "present",
+          source: "rectification",
+          ...updatePayload,
+        };
+        const { data: newRecord, error: insertError } = await supabase
+          .from("attendance_logs")
+          .insert(insertPayload)
+          .select()
+          .single();
+        if (insertError) throw insertError;
+        await supabase
           .from("rectification_requests")
-          .update({ attendance_id: attendanceRecord.attendance_id })
+          .update({ attendance_id: newRecord.id })
           .eq("id", rectificationRequest.id);
-
-        if (updateError) throw updateError;
-
-        return attendanceRecord;
+        return newRecord;
       } catch (error) {
         console.error("Error updating attendance record:", error);
         throw error;
@@ -231,25 +240,38 @@ export const useRectificationsStore = defineStore("rectifications", {
       }
     },
 
-    async fetchAttendanceWithRectifications(userId, startDate, endDate) {
+    async fetchAttendanceWithRectifications(profileId, startDate, endDate) {
       try {
-        // Get attendance records
+        // Resolve staff_id from profile (profileId = profiles.id)
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("bio_id")
+          .eq("id", profileId)
+          .maybeSingle();
+        if (!profile?.bio_id) return [];
+        const { data: staffRow } = await supabase
+          .from("staff")
+          .select("id")
+          .eq("bio_id", profile.bio_id)
+          .maybeSingle();
+        if (!staffRow?.id) return [];
+        const staffId = staffRow.id;
+
         const { data: attendance, error: attendanceError } = await supabase
-          .from("attendance")
+          .from("attendance_logs")
           .select("*")
-          .eq("user_id", userId)
+          .eq("staff_id", staffId)
           .gte("date", startDate)
           .lte("date", endDate)
           .order("date", { ascending: true });
 
         if (attendanceError) throw attendanceError;
 
-        // Get approved rectifications for the same period
         const { data: rectifications, error: rectificationError } =
           await supabase
             .from("rectification_requests")
             .select("*")
-            .eq("user_id", userId)
+            .eq("user_id", profileId)
             .eq("status", "approved")
             .gte("date", startDate)
             .lte("date", endDate)
@@ -257,55 +279,39 @@ export const useRectificationsStore = defineStore("rectifications", {
 
         if (rectificationError) throw rectificationError;
 
-        // Merge attendance with rectifications
-        const mergedRecords = [];
-
-        // Create a map of attendance records by date
         const attendanceMap = {};
-        attendance.forEach((record) => {
+        (attendance || []).forEach((record) => {
           attendanceMap[record.date] = record;
         });
 
-        // Process each date in the range
+        const mergedRecords = [];
         const currentDate = new Date(startDate);
         const end = new Date(endDate);
 
         while (currentDate <= end) {
           const dateStr = currentDate.toISOString().split("T")[0];
-          const attendanceRecord = attendanceMap[dateStr];
-          const rectification = rectifications.find((r) => r.date === dateStr);
+          const log = attendanceMap[dateStr];
+          const rect = (rectifications || []).find((r) => r.date === dateStr);
 
-          if (attendanceRecord) {
-            // If there's a rectification for this date, use the rectified data
-            if (rectification) {
-              mergedRecords.push({
-                ...attendanceRecord,
-                time_in: rectification.time_in || attendanceRecord.time_in,
-                time_out: rectification.time_out || attendanceRecord.time_out,
-                status: "rectified",
-                rectification_id: rectification.id,
-                rectification_notes: rectification.review_notes,
-              });
-            } else {
-              mergedRecords.push(attendanceRecord);
-            }
-          } else if (rectification) {
-            // Create a virtual attendance record from rectification
+          if (log) {
             mergedRecords.push({
-              attendance_id: `rectified_${rectification.id}`,
-              user_id: userId,
+              ...log,
+              time_in: rect?.requested_in ?? log.time_in,
+              time_out: rect?.requested_out ?? log.time_out,
+              rectification_id: rect?.id ?? null,
+            });
+          } else if (rect) {
+            mergedRecords.push({
+              id: `rectified_${rect.id}`,
+              staff_id: staffId,
               date: dateStr,
-              time_in: rectification.time_in,
-              time_out: rectification.time_out,
-              status: "rectified",
-              rectification_id: rectification.id,
-              rectification_notes: rectification.review_notes,
-              overtime_in: null,
-              overtime_out: null,
-              undertime: null,
+              time_in: rect.requested_in,
+              time_out: rect.requested_out,
+              status: "present",
+              source: "rectification",
+              rectification_id: rect.id,
             });
           }
-
           currentDate.setDate(currentDate.getDate() + 1);
         }
 

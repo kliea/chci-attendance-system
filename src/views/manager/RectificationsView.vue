@@ -76,17 +76,12 @@
         >
           <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
             <div class="flex-1 min-w-[200px]">
-              <h3 class="font-sans font-medium text-anito-black text-base mb-1">
-                {{ request.rectification_title }}
+              <h3 class="font-sans font-medium text-anito-black text-base mb-1 line-clamp-2">
+                {{ request.reason }}
               </h3>
               <div class="flex flex-wrap gap-4 text-sm text-anito-gray mb-2">
-                <span>{{ getUserName(request.users) }}</span>
+                <span>{{ getRequesterName(request.requester) }}</span>
                 <span>{{ formatDate(request.date) }}</span>
-                <span
-                  class="text-[10px] tracking-[0.2em] uppercase px-2 py-1 bg-yellow-100 text-yellow-800 rounded font-sans font-medium"
-                >
-                  {{ formatType(request.rectification_type) }}
-                </span>
               </div>
             </div>
             <div class="flex gap-2">
@@ -111,27 +106,27 @@
 
           <div class="space-y-2">
             <p class="text-anito-gray text-sm font-sans font-light">
-              {{ request.description }}
+              {{ request.reason }}
             </p>
 
             <div
-              v-if="request.time_in || request.time_out"
+              v-if="request.requested_in || request.requested_out"
               class="flex flex-wrap gap-4 text-sm"
             >
-              <div v-if="request.time_in" class="flex items-center gap-2">
+              <div v-if="request.requested_in" class="flex items-center gap-2">
                 <span class="text-anito-gray font-sans font-light"
-                  >Corrected Time In:</span
+                  >Requested time in:</span
                 >
                 <span class="text-anito-black font-sans font-medium">{{
-                  request.time_in
+                  request.requested_in
                 }}</span>
               </div>
-              <div v-if="request.time_out" class="flex items-center gap-2">
+              <div v-if="request.requested_out" class="flex items-center gap-2">
                 <span class="text-anito-gray font-sans font-light"
-                  >Corrected Time Out:</span
+                  >Requested time out:</span
                 >
                 <span class="text-anito-black font-sans font-medium">{{
-                  request.time_out
+                  request.requested_out
                 }}</span>
               </div>
             </div>
@@ -188,12 +183,7 @@
               <th
                 class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
-                Title
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Type
+                Reason
               </th>
               <th
                 class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
@@ -219,16 +209,13 @@
               class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
             >
               <td class="px-4 py-3 text-sm font-sans text-anito-black">
-                {{ getUserName(request.users) }}
+                {{ getRequesterName(request.requester) }}
               </td>
               <td class="px-4 py-3 text-sm font-sans text-anito-black">
                 {{ formatDate(request.date) }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
-                {{ request.rectification_title }}
-              </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-gray">
-                {{ formatType(request.rectification_type) }}
+              <td class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate" :title="request.reason">
+                {{ request.reason }}
               </td>
               <td class="px-4 py-3">
                 <span
@@ -239,11 +226,7 @@
                 </span>
               </td>
               <td class="px-4 py-3 text-sm font-sans text-anito-gray">
-                {{
-                  request.reviewers
-                    ? `${request.reviewers.fname} ${request.reviewers.lname}`
-                    : "—"
-                }}
+                {{ request.reviewer?.full_name ?? "—" }}
               </td>
               <td class="px-4 py-3">
                 <button
@@ -296,7 +279,7 @@
           <p class="text-anito-gray text-sm font-sans font-light mb-2">
             Request from
             <strong class="text-anito-black">{{
-              getUserName(selectedRequest.users)
+              getRequesterName(selectedRequest.requester)
             }}</strong>
             for
             <strong class="text-anito-black">{{
@@ -304,26 +287,11 @@
             }}</strong>
           </p>
           <p class="text-anito-black text-sm font-sans font-medium">
-            {{ selectedRequest.rectification_title }}
+            {{ selectedRequest.reason }}
           </p>
         </div>
 
         <form class="space-y-4" @submit.prevent="rejectRequest">
-          <div>
-            <label
-              for="rejectNotes"
-              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-              >Reason for rejection (optional)</label
-            >
-            <textarea
-              id="rejectNotes"
-              v-model="rejectNotes"
-              rows="3"
-              class="w-full px-4 py-3 border border-anito-gray-light rounded bg-transparent text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none transition-colors resize-none"
-              placeholder="Provide a reason for rejecting this request..."
-            />
-          </div>
-
           <div v-if="rejectError" class="text-red-600 text-sm">
             {{ rejectError }}
           </div>
@@ -362,7 +330,6 @@ const activeTab = ref("pending");
 const processing = ref(null);
 const showRejectModal = ref(false);
 const selectedRequest = ref(null);
-const rejectNotes = ref("");
 const rejectSubmitting = ref(false);
 const rejectError = ref("");
 
@@ -391,7 +358,6 @@ async function approveRequest(request) {
 
 function openRejectModal(request) {
   selectedRequest.value = request;
-  rejectNotes.value = "";
   rejectError.value = "";
   showRejectModal.value = true;
 }
@@ -399,7 +365,6 @@ function openRejectModal(request) {
 function closeRejectModal() {
   showRejectModal.value = false;
   selectedRequest.value = null;
-  rejectNotes.value = "";
   rejectError.value = "";
 }
 
@@ -413,7 +378,6 @@ async function rejectRequest() {
     selectedRequest.value.id,
     "rejected",
     authStore.profile?.id,
-    rejectNotes.value.trim() || null,
   );
 
   if (!result.ok) {
@@ -430,11 +394,9 @@ function viewRequestDetails(request) {
   activeTab.value = "pending";
 }
 
-function getUserName(user) {
-  if (!user) return "Unknown";
-  return (
-    `${user.fname || ""} ${user.lname || ""}`.trim() || user.bio_id || "Unknown"
-  );
+function getRequesterName(requester) {
+  if (!requester) return "Unknown";
+  return requester.full_name?.trim() || requester.bio_id || "Unknown";
 }
 
 function formatDate(dateString) {
@@ -445,17 +407,6 @@ function formatDate(dateString) {
 function formatDateTime(dateString) {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleString();
-}
-
-function formatType(type) {
-  const types = {
-    time_in: "Time In",
-    time_out: "Time Out",
-    both: "Both",
-    missing: "Missing",
-    other: "Other",
-  };
-  return types[type] || type;
 }
 
 function getStatusClass(status) {

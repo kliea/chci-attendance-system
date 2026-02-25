@@ -1,141 +1,142 @@
 <template>
   <div class="max-w-4xl">
-    <header class="mb-6">
-      <h1
-        class="font-display font-light text-xl tracking-wide text-anito-black"
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h1
+          class="font-display font-light text-xl tracking-wide text-anito-black"
+        >
+          Rectify Attendance
+        </h1>
+        <p
+          class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed"
+        >
+          Request corrections for your attendance records.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
+        @click="openRectifyModal"
       >
-        Rectify Attendance
-      </h1>
-      <p
-        class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed"
-      >
-        Request corrections for your attendance records.
-      </p>
+        Request Rectification
+      </button>
     </header>
 
-    <!-- Rectification Form -->
-    <section
-      class="rounded border border-anito-gray-light overflow-hidden mb-8"
+    <!-- Success/error messages (outside modal) -->
+    <div v-if="submitSuccess" class="mb-4 p-3 rounded bg-green-50 text-green-800 text-sm font-sans">
+      {{ submitSuccess }}
+    </div>
+    <div v-if="submitError" class="mb-4 p-3 rounded bg-red-50 text-red-700 text-sm font-sans">
+      {{ submitError }}
+    </div>
+
+    <!-- DTR Rectification Request Modal -->
+    <div
+      v-if="showRectifyModal"
+      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      @click.self="closeRectifyModal"
     >
-      <h2
-        class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white"
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto border border-anito-gray-light overflow-hidden"
       >
-        New Request
-      </h2>
-      <div class="p-6">
-        <form class="space-y-4" @submit.prevent="submitRequest">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                for="date"
-                class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-                >Date *</label
-              >
-              <input
-                id="date"
-                v-model="form.date"
-                type="date"
-                required
-                class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-              />
-            </div>
-            <div>
-              <label
-                for="type"
-                class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-                >Type *</label
-              >
-              <select
-                id="type"
-                v-model="form.type"
-                required
-                class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-              >
-                <option value="">Select type</option>
-                <option value="time_in">Time In Correction</option>
-                <option value="time_out">Time Out Correction</option>
-                <option value="both">Time In & Out Correction</option>
-                <option value="missing">Missing Record</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
+        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+          <div class="flex items-center justify-between">
+            <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
+              DTR Rectification Request Form
+            </h2>
+            <button
+              type="button"
+              class="text-anito-gray hover:text-anito-black transition-colors"
+              aria-label="Close"
+              @click="closeRectifyModal"
+            >
+              ✕
+            </button>
           </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                for="timeIn"
-                class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-                >Corrected Time In</label
-              >
-              <input
-                id="timeIn"
-                v-model="form.timeIn"
-                type="time"
-                class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-              />
-            </div>
-            <div>
-              <label
-                for="timeOut"
-                class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-                >Corrected Time Out</label
-              >
-              <input
-                id="timeOut"
-                v-model="form.timeOut"
-                type="time"
-                class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-              />
-            </div>
-          </div>
-
+        </div>
+        <form class="p-6 space-y-4" @submit.prevent="submitRequest">
           <div>
             <label
-              for="title"
+              for="rectify-date"
               class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-              >Title *</label
             >
+              Specified date/s *
+            </label>
             <input
-              id="title"
-              v-model="form.title"
-              type="text"
+              id="rectify-date"
+              v-model="form.date"
+              type="date"
               required
-              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-              placeholder="Brief description of the correction needed"
+              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
             />
           </div>
 
           <div>
+            <span class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2">
+              Nature of rectification *
+            </span>
+            <div class="flex flex-wrap gap-4">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="form.nature"
+                  type="radio"
+                  value="time_in"
+                  class="text-anito-blue-mid focus:ring-anito-blue-mid"
+                />
+                <span class="text-sm font-sans text-anito-black">FR1: Missed Logged-In</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="form.nature"
+                  type="radio"
+                  value="time_out"
+                  class="text-anito-blue-mid focus:ring-anito-blue-mid"
+                />
+                <span class="text-sm font-sans text-anito-black">FR2: Missed Logged-Out</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
             <label
-              for="description"
+              for="rectify-reason"
               class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-              >Description *</label
             >
+              Reason/s *
+            </label>
             <textarea
-              id="description"
-              v-model="form.description"
-              rows="4"
+              id="rectify-reason"
+              v-model="form.reason"
+              rows="3"
               required
               class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors resize-none"
-              placeholder="Explain why this correction is needed and provide any relevant details..."
+              placeholder="State the reason for this rectification..."
             />
           </div>
 
-          <div v-if="submitError" class="text-red-600 text-sm">
-            {{ submitError }}
-          </div>
-          <div v-if="submitSuccess" class="text-anito-black text-sm">
-            {{ submitSuccess }}
+          <div>
+            <label
+              for="rectify-time"
+              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
+            >
+              Specify rectified time *
+            </label>
+            <input
+              id="rectify-time"
+              v-model="form.rectifiedTime"
+              type="time"
+              required
+              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
+            />
           </div>
 
-          <div class="flex gap-2 pt-2">
+          <div class="flex gap-2 pt-2 border-t border-anito-gray-light pt-4">
             <button
               type="button"
               class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
-              @click="resetForm"
+              @click="closeRectifyModal"
             >
-              Clear
+              Cancel
             </button>
             <button
               type="submit"
@@ -147,7 +148,7 @@
           </div>
         </form>
       </div>
-    </section>
+    </div>
 
     <!-- Previous Requests -->
     <section class="rounded border border-anito-gray-light overflow-hidden">
@@ -185,12 +186,7 @@
               <th
                 class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
-                Title
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Type
+                Reason
               </th>
               <th
                 class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
@@ -208,11 +204,8 @@
               <td class="px-4 py-3 text-sm font-sans text-anito-black">
                 {{ formatDate(request.date) }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
-                {{ request.rectification_title }}
-              </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-gray">
-                {{ formatType(request.rectification_type) }}
+              <td class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate" :title="request.reason">
+                {{ request.reason }}
               </td>
               <td class="px-4 py-3">
                 <span
@@ -238,13 +231,13 @@ import { useAuthStore } from "@/stores/auth.js";
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
 
+const showRectifyModal = ref(false);
+
 const form = reactive({
   date: "",
-  type: "",
-  timeIn: "",
-  timeOut: "",
-  title: "",
-  description: "",
+  nature: "time_in", // 'time_in' | 'time_out' (FR1 / FR2)
+  reason: "",
+  rectifiedTime: "",
 });
 
 const userRequests = ref([]);
@@ -254,6 +247,18 @@ const error = ref("");
 const submitting = ref(false);
 const submitError = ref("");
 const submitSuccess = ref("");
+
+function openRectifyModal() {
+  resetForm();
+  submitError.value = "";
+  submitSuccess.value = "";
+  showRectifyModal.value = true;
+}
+
+function closeRectifyModal() {
+  showRectifyModal.value = false;
+  resetForm();
+}
 
 onMounted(async () => {
   await fetchUserRequests();
@@ -281,24 +286,23 @@ async function submitRequest() {
   submitError.value = "";
   submitSuccess.value = "";
 
+  const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
+  const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
+
   const result = await rectificationsStore.createRequest({
     userId: authStore.profile?.id,
-    attendanceId: null, // Can be enhanced to link to specific attendance record
-    title: form.title.trim(),
-    description: form.description.trim(),
-    type: form.type,
+    attendanceId: null,
     date: form.date,
-    timeIn: form.timeIn || null,
-    timeOut: form.timeOut || null,
+    reason: form.reason.trim(),
+    requestedIn: requestedIn || null,
+    requestedOut: requestedOut || null,
   });
 
   if (result.ok) {
     submitSuccess.value =
       "Your rectification request has been submitted successfully.";
-    resetForm();
+    closeRectifyModal();
     await fetchUserRequests();
-
-    // Clear success message after 5 seconds
     setTimeout(() => {
       submitSuccess.value = "";
     }, 5000);
@@ -311,28 +315,15 @@ async function submitRequest() {
 
 function resetForm() {
   form.date = "";
-  form.type = "";
-  form.timeIn = "";
-  form.timeOut = "";
-  form.title = "";
-  form.description = "";
+  form.nature = "time_in";
+  form.reason = "";
+  form.rectifiedTime = "";
   rectificationsStore.clearSubmitStatus();
 }
 
 function formatDate(dateString) {
   if (!dateString) return "—";
   return new Date(dateString).toLocaleDateString();
-}
-
-function formatType(type) {
-  const types = {
-    time_in: "Time In",
-    time_out: "Time Out",
-    both: "Both",
-    missing: "Missing",
-    other: "Other",
-  };
-  return types[type] || type;
 }
 
 function getStatusClass(status) {
