@@ -38,6 +38,12 @@ create table if not exists public.staff (
   created_at   timestamptz default now()
 );
 
+-- FK: profile.bio_id → staff.bio_id so profiles (logged-in employees) can access own attendance
+alter table public.profiles
+  drop constraint if exists profiles_bio_id_fkey;
+alter table public.profiles
+  add constraint profiles_bio_id_fkey foreign key (bio_id) references public.staff(bio_id);
+
 -- ATTENDANCE LOGS (keyed by staff so attendance can exist without user accounts)
 create table if not exists public.attendance_logs (
   id           uuid primary key default gen_random_uuid(),
@@ -102,13 +108,18 @@ as $$
   );
 $$;
 
--- RLS: staff — managers can do all; no auth needed for roster
+-- RLS: staff — managers can do all; employees can select only their own row (for own attendance_logs)
 alter table public.staff enable row level security;
 drop policy if exists "Managers can select staff" on public.staff;
 drop policy if exists "Managers can insert staff" on public.staff;
 drop policy if exists "Managers can update staff" on public.staff;
+drop policy if exists "Users can select own staff row" on public.staff;
 create policy "Managers can select staff"
   on public.staff for select using (public.is_manager());
+create policy "Users can select own staff row"
+  on public.staff for select using (
+    exists (select 1 from public.profiles p where p.id = auth.uid() and p.bio_id = staff.bio_id)
+  );
 create policy "Managers can insert staff"
   on public.staff for insert with check (public.is_manager());
 create policy "Managers can update staff"
