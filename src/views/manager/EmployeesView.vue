@@ -181,7 +181,8 @@ function removeRow(i) {
 }
 
 async function submitList() {
-  if (!pendingRows.length) {
+  console.log(pendingRows)
+  if (pendingRows.length) {
     listError.value = 'Add at least one staff with Bio ID.'
     return
   }

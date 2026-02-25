@@ -37,7 +37,7 @@ const pageTitle = computed(() => {
     'my-attendance': 'My Attendance',
     rectify: 'Rectify',
   }
-  return titles[name] ?? 'ANITO'
+  return titles[name] ?? 'CHCI'
 })
 
 async function handleLogout() {

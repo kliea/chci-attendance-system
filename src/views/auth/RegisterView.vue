@@ -10,7 +10,7 @@
           <select
             id="staffSelect"
             v-model="selectedStaffId"
-            class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-white focus:border-anito-blue-mid focus:outline-none w-full transition-colors duration-150"
+            class="border border-anito-gray-light rounded bg-black px-4 py-3 text-sm font-sans text-anito-white focus:border-anito-blue-mid focus:outline-none w-full transition-colors duration-150"
           >
             <option value="">— Not in the list —</option>
             <option v-for="s in unregisteredStaff" :key="s.id" :value="s.id">

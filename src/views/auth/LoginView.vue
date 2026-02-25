@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-anito-black flex">
     <div class="hidden md:flex w-[60%] flex-col items-center justify-center p-12">
-      <p class="text-[10px] tracking-[0.3em] uppercase text-anito-blue-mid font-sans font-medium">CHCI</p>
+      <p class="text-[10px] tracking-[0.3em] uppercase text-anito-blue-mid font-sans font-medium">HRIS</p>
       <h1 class="font-display font-light text-[72px] tracking-wide text-white mt-2">
-        ANITO<span class="inline-block w-3 h-3 rounded-full bg-anito-blue-mid mb-1 ml-1 align-middle"></span>
+        CHCI<span class="inline-block w-3 h-3 rounded-full bg-anito-blue-mid mb-1 ml-1 align-middle"></span>
       </h1>
       <div class="w-8 h-0.5 bg-anito-blue-mid my-4"></div>
       <p class="text-[10px] tracking-[0.3em] uppercase text-anito-gray font-sans font-light">OJT Attendance Monitoring</p>
