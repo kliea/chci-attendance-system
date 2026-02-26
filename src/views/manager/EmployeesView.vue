@@ -127,15 +127,6 @@
             <option value="IT">IT</option>
           </select>
         </div>
-        <div>
-          <Label for-id="profile-edit-role">Role</Label>
-          <select id="profile-edit-role" v-model="profileEditRole" class="w-full rounded border border-anito-gray-light px-3 py-2 text-sm font-sans text-anito-black focus:outline-none focus:ring-2 focus:ring-anito-black">
-            <option value="employee">Employee</option>
-            <option value="supervisor">Supervisor</option>
-            <option value="manager">Manager</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
         <p v-if="profileEditError" class="text-red-600 text-sm">{{ profileEditError }}</p>
         <div class="flex gap-2">
           <Button type="button" variant="outline" @click="showProfileEditModal = false">Cancel</Button>
@@ -252,7 +243,6 @@ const profileEditFullName = ref('')
 const profileEditBioId = ref('')
 const profileEditEmail = ref('')
 const profileEditProgram = ref('')
-const profileEditRole = ref('employee')
 const profileEditError = ref('')
 const profileEditSaving = ref(false)
 const profileDeleteTarget = ref(null)
@@ -377,7 +367,6 @@ function openProfileEditModal(row) {
   profileEditBioId.value = row.bio_id ?? ''
   profileEditEmail.value = row.email ?? ''
   profileEditProgram.value = row.program ?? ''
-  profileEditRole.value = row.role ?? 'employee'
   profileEditError.value = ''
   showProfileEditModal.value = true
 }
@@ -391,7 +380,6 @@ async function saveProfileEdit() {
     bio_id: profileEditBioId.value.trim() || null,
     email: profileEditEmail.value.trim() || null,
     program: profileEditProgram.value || null,
-    role: profileEditRole.value,
   })
   profileEditSaving.value = false
   if (result.ok) {
