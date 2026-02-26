@@ -94,13 +94,12 @@ const rectifySubmenuOpen = ref(false);
 let hoverTimeout = null;
 
 const managerNav = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/employees", label: "Employees" },
-  { to: "/attendance", label: "Employee DTR" },
-  { to: "/import", label: "Import" },
-  { to: "/rectifications", label: "Rectifications" },
-  { to: "/holidays", label: "Holidays" },
-];
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/employees', label: 'Employees' },
+  { to: '/attendance', label: 'Employee DTR' },
+  { to: '/import', label: 'Import' },
+  { to: '/rectifications', label: 'Rectifications' },
+]
 
 const employeeNav = [{ to: "/my-attendance", label: "My Attendance" }];
 

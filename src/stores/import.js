@@ -73,7 +73,6 @@ export const useImportStore = defineStore('import', () => {
       const row = {
         staff_id: staffId,
         date: group.date,
-        status: 'present',
         source: 'biometric',
       }
 
@@ -85,11 +84,6 @@ export const useImportStore = defineStore('import', () => {
           case 5: row.overtime_out = toTimeOnly(e.timestamp); break
         }
       })
-
-      if (row.time_in) {
-        const [h, m] = (row.time_in || '').split(':').map(Number)
-        if (h > 8 || (h === 8 && m > 10)) row.status = 'late'
-      }
 
       rows.push(row)
     })

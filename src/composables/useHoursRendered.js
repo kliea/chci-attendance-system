@@ -44,7 +44,7 @@ export function groupLogsByStaff(logs) {
       byStaff[id] = { logs: [], hours: 0, daysPresent: 0 }
     }
     byStaff[id].logs.push(row)
-    if (row.status === 'present' || row.status === 'late') byStaff[id].daysPresent += 1
+    byStaff[id].daysPresent += 1
   }
   for (const id of Object.keys(byStaff)) {
     byStaff[id].hours = computeHoursRendered(byStaff[id].logs)
