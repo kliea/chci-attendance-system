@@ -142,7 +142,6 @@ import {
   CardHeaderFlex,
   DataTable,
   Dialog,
-  Badge,
   Input,
   Label,
   AttendanceDayTable,

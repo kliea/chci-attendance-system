@@ -48,7 +48,6 @@ const managerNav = [
   { to: '/attendance', label: 'Employee DTR' },
   { to: '/import', label: 'Import' },
   { to: '/rectifications', label: 'Rectifications' },
-  { to: '/holidays', label: 'Holidays' },
 ]
 
 const employeeNav = [

@@ -51,7 +51,6 @@ create table if not exists public.attendance_logs (
   date         date not null,
   time_in      time,
   time_out     time,
-  status       text check (status in ('present', 'late', 'absent', 'holiday')),
   source       text default 'biometric',
   created_at   timestamptz default now(),
   unique(staff_id, date)

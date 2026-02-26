@@ -27,7 +27,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
   )
 
   /**
-   * Fetch rows from attendance_logs. Manager: optional dateFrom, dateTo, staffId, status, page, pageSize. Employee: own only (profile.bio_id → staff_id).
+   * Fetch rows from attendance_logs. Manager: optional dateFrom, dateTo, staffId, page, pageSize. Employee: own only (profile.bio_id → staff_id).
    */
   async function fetchAttendance(opts = {}) {
     loading.value = true
@@ -39,7 +39,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     let query = supabase
       .from('attendance_logs')
-      .select('id, date, time_in, time_out, status, source, staff_id, staff(full_name, bio_id)', { count: usePagination ? 'exact' : undefined })
+      .select('id, date, time_in, time_out, source, staff_id, staff(full_name, bio_id)', { count: usePagination ? 'exact' : undefined })
       .order('date', { ascending: false })
 
     if (opts.forCurrentUserOnly) {
@@ -58,7 +58,6 @@ export const useAttendanceStore = defineStore('attendance', () => {
 
     if (opts.dateFrom) query = query.gte('date', opts.dateFrom)
     if (opts.dateTo) query = query.lte('date', opts.dateTo)
-    if (opts.status) query = query.eq('status', opts.status)
 
     if (usePagination) {
       const from = (requestPage - 1) * requestPageSize

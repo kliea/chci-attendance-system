@@ -197,7 +197,6 @@ export const useRectificationsStore = defineStore("rectifications", {
         const insertPayload = {
           staff_id: staffId,
           date: rectificationRequest.date,
-          status: "present",
           source: "rectification",
           ...updatePayload,
         };
@@ -307,7 +306,6 @@ export const useRectificationsStore = defineStore("rectifications", {
               date: dateStr,
               time_in: rect.requested_in,
               time_out: rect.requested_out,
-              status: "present",
               source: "rectification",
               rectification_id: rect.id,
             });
