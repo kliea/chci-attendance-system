@@ -6,14 +6,14 @@
  * If your form layout differs, adjust COORDS below (PDF origin: bottom-left).
  */
 
-import { PDFDocument, StandardFonts } from 'pdf-lib'
-import { totalHoursRenderedInMonth } from '@/composables/useAttendanceDayRows.js'
+import { PDFDocument, StandardFonts } from "pdf-lib";
+import { totalHoursRenderedInMonth } from "@/composables/useAttendanceDayRows.js";
 
 /** X offset for the right-side copy (same y as left). */
-const COPY_OFFSET_X = 282
+const COPY_OFFSET_X = 282;
 
 /** Default name under "In Charge" (certification section). */
-export const IN_CHARGE_DEFAULT_NAME = 'Elbert S. Moyon'
+export const IN_CHARGE_DEFAULT_NAME = "Elbert S. Moyon";
 
 /** Coordinate map for the Appendix 24 PDF (points; origin bottom-left). Two copies: left and right (offset ~300). */
 export const COORDS = {
@@ -28,10 +28,10 @@ export const COORDS = {
       rowHeight: 10.8,
       cols: { timeIn: 73, timeOut: 179, undertime: 225 },
     },
-    /** Total rendered hours for the month (HH:MM) — hours part */
-    totalHoursMonth: { x: 230, y: 520 },
-    /** Total rendered hours for the month (HH:MM) — minutes part */
-    totalMinutesMonth: { x: 255, y: 520 },
+    /** Total rendered hours for the month (combined format) */
+    totalCombined: { x: 60, y: 520 },
+    /** Total undertime boxes in the undertime column */
+    totalUndertime: { x: 225, y: 520 },
     /** Below line above "VERIFIED as to the prescribed office hours:" */
     verifiedName: { x: 110, y: 590 },
     /** Below line above "In Charge" */
@@ -50,33 +50,33 @@ export const COORDS = {
         undertime: 225 + COPY_OFFSET_X,
       },
     },
-    totalHoursMonth: { x: 230 + COPY_OFFSET_X, y: 520 },
-    totalMinutesMonth: { x: 255 + COPY_OFFSET_X, y: 520 },
+    totalCombined: { x: 60 + COPY_OFFSET_X, y: 520 },
+    totalUndertime: { x: 225 + COPY_OFFSET_X, y: 520 },
     verifiedName: { x: 110 + COPY_OFFSET_X, y: 590 },
     inCharge: { x: 195 + COPY_OFFSET_X, y: 638 },
   },
-}
+};
 
 /**
  * Format undertime as hh:mm (8 - hoursRendered). E.g. 0 → "0:00", 0.5 → "0:30", 1.5 → "1:30".
  */
 function formatUndertime(hoursRendered) {
-  if (hoursRendered == null || typeof hoursRendered !== 'number') return ''
-  const undertimeH = Math.max(0, 8 - hoursRendered)
-  const h = Math.floor(undertimeH)
-  const m = Math.round((undertimeH % 1) * 60)
-  return `${h}:${String(m).padStart(2, '0')}`
+  if (hoursRendered == null || typeof hoursRendered !== "number") return "";
+  const undertimeH = Math.max(0, 8 - hoursRendered);
+  const h = Math.floor(undertimeH);
+  const m = Math.round((undertimeH % 1) * 60);
+  return `${h}:${String(m).padStart(2, "0")}`;
 }
 
 /** Parse hoursRendered string from buildDayRows (e.g. "8h", "7h 30m") to number for undertime calc. */
 function parseHoursRendered(str) {
-  if (str == null || str === '') return null
-  const s = String(str).trim()
-  const hMatch = s.match(/(\d+)\s*h/)
-  const mMatch = s.match(/(\d+)\s*m/)
-  const h = hMatch ? Number(hMatch[1]) : 0
-  const m = mMatch ? Number(mMatch[1]) : 0
-  return h + m / 60
+  if (str == null || str === "") return null;
+  const s = String(str).trim();
+  const hMatch = s.match(/(\d+)\s*h/);
+  const mMatch = s.match(/(\d+)\s*m/);
+  const h = hMatch ? Number(hMatch[1]) : 0;
+  const m = mMatch ? Number(mMatch[1]) : 0;
+  return h + m / 60;
 }
 
 /**
@@ -94,48 +94,76 @@ function parseHoursRendered(str) {
  * @returns {Promise<Uint8Array>} Filled PDF bytes
  */
 export async function fillAppendix24Pdf(pdfBytes, options) {
-  const { employeeName, monthLabel, dayRows, selectedMonth, logs, totalHoursMonth: totalHoursMonthOption } = options
-  const doc = await PDFDocument.load(pdfBytes)
-  const font = await doc.embedFont(StandardFonts.Helvetica)
-  const pages = doc.getPages()
-  const page = pages[0]
-  const { height } = page.getSize()
-  const fontSize = COORDS.fontSize.table
-  const headerSize = COORDS.fontSize.header
-  const certSize = COORDS.fontSize.cert ?? 9
+  const {
+    employeeName,
+    monthLabel,
+    dayRows,
+    selectedMonth,
+    logs,
+    totalHoursMonth: totalHoursMonthOption,
+  } = options;
+  const doc = await PDFDocument.load(pdfBytes);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await doc.embedFont(StandardFonts.HelveticaBold);
+  const pages = doc.getPages();
+  const page = pages[0];
+  const { height } = page.getSize();
+  const fontSize = COORDS.fontSize.table;
+  const headerSize = COORDS.fontSize.header;
+  const certSize = COORDS.fontSize.cert ?? 9;
 
-  const rows = Array.isArray(dayRows) ? dayRows : []
+  const rows = Array.isArray(dayRows) ? dayRows : [];
 
   // Month total as HH:MM (same calculation as MyAttendanceView — totalHoursRenderedInMonth)
-  let totalDecimal = 0
-  if (totalHoursMonthOption != null && typeof totalHoursMonthOption === 'number') {
-    totalDecimal = totalHoursMonthOption
+  let totalDecimal = 0;
+  if (
+    totalHoursMonthOption != null &&
+    typeof totalHoursMonthOption === "number"
+  ) {
+    totalDecimal = totalHoursMonthOption;
   } else if (selectedMonth && Array.isArray(logs) && logs.length > 0) {
-    totalDecimal = totalHoursRenderedInMonth(selectedMonth, logs)
+    totalDecimal = totalHoursRenderedInMonth(selectedMonth, logs);
   } else {
     for (const row of rows) {
-      const n = parseHoursRendered(row?.hoursRendered)
-      if (n != null) totalDecimal += n
+      const n = parseHoursRendered(row?.hoursRendered);
+      if (n != null) totalDecimal += n;
     }
-    totalDecimal = Math.round(totalDecimal * 100) / 100
+    totalDecimal = Math.round(totalDecimal * 100) / 100;
   }
-  let totalHoursPart = Math.floor(totalDecimal)
-  let totalMinutesPart = Math.round((totalDecimal % 1) * 60)
+  let totalHoursPart = Math.floor(totalDecimal);
+  let totalMinutesPart = Math.round((totalDecimal % 1) * 60);
   if (totalMinutesPart >= 60) {
-    totalHoursPart += 1
-    totalMinutesPart = 0
+    totalHoursPart += 1;
+    totalMinutesPart = 0;
   }
-  const totalHoursMonthStr = String(totalHoursPart)
-  const totalMinutesMonthStr = String(totalMinutesPart).padStart(2, '0')
+  const totalHoursMonthStr = String(totalHoursPart);
+  const totalMinutesMonthStr = String(totalMinutesPart).padStart(2, "0");
 
-  const rowData = []
+  // Calculate total undertime for the month
+  let totalUndertimeDecimal = 0;
+  for (const row of rows) {
+    const hoursNum = parseHoursRendered(row?.hoursRendered);
+    if (hoursNum != null && hoursNum < 8) {
+      totalUndertimeDecimal += 8 - hoursNum;
+    }
+  }
+  totalUndertimeDecimal = Math.round(totalUndertimeDecimal * 100) / 100;
+  let totalUndertimeHours = Math.floor(totalUndertimeDecimal);
+  let totalUndertimeMinutes = Math.round((totalUndertimeDecimal % 1) * 60);
+  if (totalUndertimeMinutes >= 60) {
+    totalUndertimeHours += 1;
+    totalUndertimeMinutes = 0;
+  }
+  const totalUndertimeStr = `${totalUndertimeHours}:${String(totalUndertimeMinutes).padStart(2, "0")}`;
+
+  const rowData = [];
   for (let i = 0; i < 31; i++) {
-    const row = rows[i]
-    const timeIn = row?.timeIn ?? ''
-    const timeOut = row?.timeOut ?? ''
-    const hoursNum = parseHoursRendered(row?.hoursRendered)
-    const undertime = hoursNum != null ? formatUndertime(hoursNum) : ''
-    rowData.push({ timeIn, timeOut, undertime })
+    const row = rows[i];
+    const timeIn = row?.timeIn ?? "";
+    const timeOut = row?.timeOut ?? "";
+    const hoursNum = parseHoursRendered(row?.hoursRendered);
+    const undertime = hoursNum != null ? formatUndertime(hoursNum) : "";
+    rowData.push({ timeIn, timeOut, undertime });
   }
 
   for (const copy of [COORDS.left, COORDS.right]) {
@@ -145,7 +173,7 @@ export async function fillAppendix24Pdf(pdfBytes, options) {
         y: height - copy.name.y,
         size: headerSize,
         font,
-      })
+      });
     }
     if (monthLabel) {
       page.drawText(monthLabel, {
@@ -153,29 +181,36 @@ export async function fillAppendix24Pdf(pdfBytes, options) {
         y: height - copy.month.y,
         size: headerSize,
         font,
-      })
+      });
     }
-    const { startY, rowHeight, cols } = copy.table
-    const pad = (v) => (v != null && v !== '' ? String(v) : '')
+    const { startY, rowHeight, cols } = copy.table;
+    const pad = (v) => (v != null && v !== "" ? String(v) : "");
     for (let i = 0; i < 31; i++) {
-      const y = height - (startY + i * rowHeight)
-      const { timeIn, timeOut, undertime } = rowData[i]
-      page.drawText(pad(timeIn), { x: cols.timeIn, y, size: fontSize, font })
-      page.drawText(pad(timeOut), { x: cols.timeOut, y, size: fontSize, font })
-      page.drawText(pad(undertime), { x: cols.undertime, y, size: fontSize, font })
+      const y = height - (startY + i * rowHeight);
+      const { timeIn, timeOut, undertime } = rowData[i];
+      page.drawText(pad(timeIn), { x: cols.timeIn, y, size: fontSize, font });
+      page.drawText(pad(timeOut), { x: cols.timeOut, y, size: fontSize, font });
+      page.drawText(pad(undertime), {
+        x: cols.undertime,
+        y,
+        size: fontSize,
+        font,
+      });
     }
-    page.drawText(totalHoursMonthStr, {
-      x: copy.totalHoursMonth.x,
-      y: height - copy.totalHoursMonth.y,
-      size: headerSize,
+    const totalCombinedStr = `TOTAL HOURS: ${totalHoursMonthStr}H:${totalMinutesMonthStr}MINS`;
+    page.drawText(totalCombinedStr, {
+      x: copy.totalCombined.x,
+      y: height - copy.totalCombined.y,
+      size: fontSize,
+      font: boldFont,
+    });
+    // Display total undertime in the undertime column
+    page.drawText(totalUndertimeStr, {
+      x: copy.totalUndertime.x,
+      y: height - copy.totalUndertime.y,
+      size: fontSize,
       font,
-    })
-    page.drawText(totalMinutesMonthStr, {
-      x: copy.totalMinutesMonth.x,
-      y: height - copy.totalMinutesMonth.y,
-      size: headerSize,
-      font,
-    })
+    });
     // Certification: employee name under "VERIFIED as to the prescribed office hours:"
     if (employeeName) {
       page.drawText(employeeName, {
@@ -183,7 +218,7 @@ export async function fillAppendix24Pdf(pdfBytes, options) {
         y: height - copy.verifiedName.y,
         size: certSize,
         font,
-      })
+      });
     }
     // In Charge: default name under "In Charge"
     page.drawText(IN_CHARGE_DEFAULT_NAME, {
@@ -191,10 +226,10 @@ export async function fillAppendix24Pdf(pdfBytes, options) {
       y: height - copy.inCharge.y,
       size: certSize,
       font,
-    })
+    });
   }
 
-  return doc.save()
+  return doc.save();
 }
 
 /**
@@ -206,63 +241,57 @@ export async function fillAppendix24Pdf(pdfBytes, options) {
  * @returns {Promise<Uint8Array>} PDF bytes with placeholders drawn
  */
 export async function fillAppendix24PdfWithTemplate(pdfBytes) {
-  const doc = await PDFDocument.load(pdfBytes)
-  const font = await doc.embedFont(StandardFonts.Helvetica)
-  const pages = doc.getPages()
-  const page = pages[0]
-  const { height } = page.getSize()
-  const fontSize = COORDS.fontSize.table
-  const headerSize = COORDS.fontSize.header
+  const doc = await PDFDocument.load(pdfBytes);
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const pages = doc.getPages();
+  const page = pages[0];
+  const { height } = page.getSize();
+  const fontSize = COORDS.fontSize.table;
+  const headerSize = COORDS.fontSize.header;
 
-  const t = (v) => (v != null && v !== '' ? String(v) : '—')
+  const t = (v) => (v != null && v !== "" ? String(v) : "—");
   for (const copy of [COORDS.left, COORDS.right]) {
-    page.drawText('{{EMPLOYEE_NAME}}', {
+    page.drawText("{{EMPLOYEE_NAME}}", {
       x: copy.name.x,
       y: height - copy.name.y,
       size: headerSize,
       font,
-    })
-    page.drawText('{{MONTH_YEAR}}', {
+    });
+    page.drawText("{{MONTH_YEAR}}", {
       x: copy.month.x,
       y: height - copy.month.y,
       size: headerSize,
       font,
-    })
-    page.drawText('{{TOTAL_HOURS_MONTH}}', {
-      x: copy.totalHoursMonth.x,
-      y: height - copy.totalHoursMonth.y,
+    });
+    page.drawText("{{TOTAL_COMBINED}}", {
+      x: copy.totalCombined.x,
+      y: height - copy.totalCombined.y,
       size: headerSize,
       font,
-    })
-    page.drawText('{{TOTAL_MINUTES_MONTH}}', {
-      x: copy.totalMinutesMonth.x,
-      y: height - copy.totalMinutesMonth.y,
-      size: headerSize,
-      font,
-    })
-    const { startY, rowHeight, cols } = copy.table
+    });
+    const { startY, rowHeight, cols } = copy.table;
     for (let i = 0; i < 31; i++) {
-      const y = height - (startY + i * rowHeight)
-      page.drawText(t('08:00AM'), { x: cols.timeIn, y, size: fontSize, font })
-      page.drawText(t('05:00PM'), { x: cols.timeOut, y, size: fontSize, font })
-      page.drawText(t('00:00'), { x: cols.undertime, y, size: fontSize, font })
+      const y = height - (startY + i * rowHeight);
+      page.drawText(t("08:00AM"), { x: cols.timeIn, y, size: fontSize, font });
+      page.drawText(t("05:00PM"), { x: cols.timeOut, y, size: fontSize, font });
+      page.drawText(t("00:00"), { x: cols.undertime, y, size: fontSize, font });
     }
-    const certSize = COORDS.fontSize.cert ?? 9
-    page.drawText('{{EMPLOYEE_NAME}}', {
+    const certSize = COORDS.fontSize.cert ?? 9;
+    page.drawText("{{EMPLOYEE_NAME}}", {
       x: copy.verifiedName.x,
       y: height - copy.verifiedName.y,
       size: certSize,
       font,
-    })
+    });
     page.drawText(IN_CHARGE_DEFAULT_NAME, {
       x: copy.inCharge.x,
       y: height - copy.inCharge.y,
       size: certSize,
       font,
-    })
+    });
   }
 
-  return doc.save()
+  return doc.save();
 }
 
 /**
@@ -272,14 +301,19 @@ export async function fillAppendix24PdfWithTemplate(pdfBytes) {
  * @param {string} [templateUrl] - URL to the PDF template
  * @returns {Promise<{ blobUrl: string, blob: Blob }>}
  */
-export async function getAppendix24TemplateBlob(templateUrl = '/Appendix-24-Daily-Time-Record-DTR.pdf') {
-  const res = await fetch(templateUrl)
-  if (!res.ok) throw new Error(`Failed to load DTR template: ${res.status} ${res.statusText}`)
-  const pdfBytes = await res.arrayBuffer()
-  const filled = await fillAppendix24PdfWithTemplate(pdfBytes)
-  const blob = new Blob([filled], { type: 'application/pdf' })
-  const blobUrl = URL.createObjectURL(blob)
-  return { blobUrl, blob }
+export async function getAppendix24TemplateBlob(
+  templateUrl = "/Appendix-24-Daily-Time-Record-DTR.pdf",
+) {
+  const res = await fetch(templateUrl);
+  if (!res.ok)
+    throw new Error(
+      `Failed to load DTR template: ${res.status} ${res.statusText}`,
+    );
+  const pdfBytes = await res.arrayBuffer();
+  const filled = await fillAppendix24PdfWithTemplate(pdfBytes);
+  const blob = new Blob([filled], { type: "application/pdf" });
+  const blobUrl = URL.createObjectURL(blob);
+  return { blobUrl, blob };
 }
 
 /**
@@ -288,12 +322,18 @@ export async function getAppendix24TemplateBlob(templateUrl = '/Appendix-24-Dail
  * @param {string} [templateUrl] - URL to the PDF template (default: /Appendix-24-Daily-Time-Record-DTR.pdf)
  * @returns {Promise<{ blobUrl: string, blob: Blob }>}
  */
-export async function fillAndGetAppendix24Blob(options, templateUrl = '/Appendix-24-Daily-Time-Record-DTR.pdf') {
-  const res = await fetch(templateUrl)
-  if (!res.ok) throw new Error(`Failed to load DTR template: ${res.status} ${res.statusText}`)
-  const pdfBytes = await res.arrayBuffer()
-  const filled = await fillAppendix24Pdf(pdfBytes, options)
-  const blob = new Blob([filled], { type: 'application/pdf' })
-  const blobUrl = URL.createObjectURL(blob)
-  return { blobUrl, blob }
+export async function fillAndGetAppendix24Blob(
+  options,
+  templateUrl = "/Appendix-24-Daily-Time-Record-DTR.pdf",
+) {
+  const res = await fetch(templateUrl);
+  if (!res.ok)
+    throw new Error(
+      `Failed to load DTR template: ${res.status} ${res.statusText}`,
+    );
+  const pdfBytes = await res.arrayBuffer();
+  const filled = await fillAppendix24Pdf(pdfBytes, options);
+  const blob = new Blob([filled], { type: "application/pdf" });
+  const blobUrl = URL.createObjectURL(blob);
+  return { blobUrl, blob };
 }
