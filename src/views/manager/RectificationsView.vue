@@ -41,6 +41,112 @@
       </div>
     </header>
 
+    <!-- Bulk Actions Header -->
+    <div
+      v-if="activeTab === 'pending' && pendingRequests.length > 0"
+      class="flex items-center justify-between mb-4 p-3 bg-anito-gray-light/30 rounded-lg"
+    >
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            :checked="allSelected"
+            @change="toggleSelectAll"
+            class="w-4 h-4 rounded-full border-2 border-anito-gray text-anito-blue-mid focus:ring-2 focus:ring-anito-blue-mid focus:ring-offset-2"
+          />
+          <span class="text-sm font-sans text-anito-black">Select All</span>
+        </label>
+        <span
+          v-if="selectedRequests.length > 0"
+          class="text-sm font-sans text-anito-gray"
+        >
+          {{ selectedRequests.length }} selected
+        </span>
+      </div>
+      <div v-if="selectedRequests.length > 0" class="flex gap-2">
+        <button
+          type="button"
+          class="bg-green-600 text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="processing === 'bulk'"
+          @click="bulkApprove"
+        >
+          <svg
+            v-if="processing !== 'bulk'"
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+          <svg
+            v-else
+            class="w-4 h-4 animate-spin"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 12v8m0-8l6 6m-6-6v8m0-8l6 6M12 12v8m0-8l6 6m-6-6v8m0-8l6 6m-6-6v8"
+            ></path>
+          </svg>
+          {{
+            processing === "bulk"
+              ? "Processing…"
+              : `Approve Selected (${selectedRequests.length})`
+          }}
+        </button>
+        <button
+          type="button"
+          class="bg-red-600 text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="processing === 'bulk'"
+          @click="bulkReject"
+        >
+          <svg
+            v-if="processing !== 'bulk'"
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            ></path>
+          </svg>
+          <svg
+            v-else
+            class="w-4 h-4 animate-spin"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 12v8m0-8l6 6m-6-6v8m0-8l6 6M12 12v8m0-8l6 6m-6-6v8m0-8l6 6m-6-6v8"
+            ></path>
+          </svg>
+          {{
+            processing === "bulk"
+              ? "Processing…"
+              : `Reject Selected (${selectedRequests.length})`
+          }}
+        </button>
+      </div>
+    </div>
+
     <!-- Pending Requests -->
     <section
       v-if="activeTab === 'pending'"
@@ -72,67 +178,230 @@
         <div
           v-for="request in pendingRequests"
           :key="request.id"
-          class="p-6 bg-white hover:bg-anito-blue-light transition-colors duration-150"
+          class="bg-white hover:shadow-md transition-all duration-200 border-b border-anito-gray-light last:border-b-0"
         >
-          <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
-            <div class="flex-1 min-w-[200px]">
-              <h3 class="font-sans font-medium text-anito-black text-base mb-1 line-clamp-2">
-                {{ request.reason }}
-              </h3>
-              <div class="flex flex-wrap gap-4 text-sm text-anito-gray mb-2">
-                <span>{{ getRequesterName(request.requester) }}</span>
-                <span>{{ formatDate(request.date) }}</span>
+          <!-- Compact View -->
+          <div class="p-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3 flex-1">
+                <label class="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    :checked="selectedRequests.includes(request.id)"
+                    @change="toggleRequestSelection(request.id)"
+                    class="w-3 h-3 rounded-full border-2 border-anito-gray text-anito-blue-mid focus:ring-2 focus:ring-anito-blue-mid focus:ring-offset-2"
+                  />
+                </label>
+                <div
+                  class="cursor-pointer flex-1 flex items-center gap-3"
+                  @click="toggleRequestDetails(request.id)"
+                >
+                  <span
+                    class="text-xs font-medium px-1.5 py-0.5 rounded-full w-20 text-center"
+                    :class="
+                      request.requested_in
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
+                    "
+                  >
+                    {{ request.requested_in ? "Time In" : "Time Out" }}
+                  </span>
+                  <div>
+                    <h3
+                      class="font-sans font-medium text-anito-black text-xs line-clamp-1"
+                    >
+                      {{ request.reason }}
+                    </h3>
+                    <div
+                      class="flex items-center gap-3 text-xs text-anito-gray mt-1"
+                    >
+                      <span>{{ getRequesterName(request.requester) }}</span>
+                      <span>{{ formatDate(request.date) }}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                class="bg-green-600 text-white text-[10px] tracking-[0.2em] uppercase px-4 py-2 rounded hover:bg-green-700 transition-colors duration-150 font-sans font-medium disabled:opacity-50"
-                :disabled="processing === request.id"
-                @click="approveRequest(request)"
-              >
-                {{ processing === request.id ? "Processing…" : "Approve" }}
-              </button>
-              <button
-                type="button"
-                class="bg-red-600 text-white text-[10px] tracking-[0.2em] uppercase px-4 py-2 rounded hover:bg-red-700 transition-colors duration-150 font-sans font-medium disabled:opacity-50"
-                :disabled="processing === request.id"
-                @click="openRejectModal(request)"
-              >
-                {{ processing === request.id ? "Processing…" : "Reject" }}
-              </button>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="bg-green-600 text-white text-xs font-medium px-3 py-1.5 rounded hover:bg-green-700 transition-colors duration-200 font-sans disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  :disabled="processing === request.id || processing === 'bulk'"
+                  @click.stop="approveRequest(request)"
+                >
+                  <svg
+                    v-if="processing !== request.id"
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
+                  </svg>
+                  <svg
+                    v-else
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke-width="2"
+                      stroke-dasharray="31.416"
+                      stroke-dashoffset="31.416"
+                      class="animate-spin"
+                      style="transform-origin: center"
+                    ></circle>
+                  </svg>
+                  {{ processing === request.id ? "…" : "Approve" }}
+                </button>
+                <button
+                  type="button"
+                  class="bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded hover:bg-red-700 transition-colors duration-200 font-sans disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  :disabled="processing === request.id || processing === 'bulk'"
+                  @click.stop="openRejectModal(request)"
+                >
+                  <svg
+                    v-if="processing !== request.id"
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    ></path>
+                  </svg>
+                  <svg
+                    v-else
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke-width="2"
+                      stroke-dasharray="31.416"
+                      stroke-dashoffset="31.416"
+                      class="animate-spin"
+                      style="transform-origin: center"
+                    ></circle>
+                  </svg>
+                  {{ processing === request.id ? "…" : "Reject" }}
+                </button>
+                <svg
+                  class="w-3 h-3 text-anito-gray transition-transform duration-200"
+                  :class="{
+                    'rotate-180': expandedRequests.includes(request.id),
+                  }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  ></path>
+                </svg>
+              </div>
             </div>
           </div>
 
-          <div class="space-y-2">
-            <p class="text-anito-gray text-sm font-sans font-light">
-              {{ request.reason }}
-            </p>
+          <!-- Expanded Details -->
+          <div
+            v-if="expandedRequests.includes(request.id)"
+            class="px-4 pb-4 border-t border-anito-gray-light"
+          >
+            <div class="pt-4 space-y-3">
+              <div class="bg-anito-gray-light/30 rounded-lg p-4 space-y-3">
+                <div class="flex items-start gap-2">
+                  <svg
+                    class="w-4 h-4 text-anito-gray mt-0.5 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    ></path>
+                  </svg>
+                  <div>
+                    <p class="text-sm font-medium text-anito-black mb-1">
+                      Reason
+                    </p>
+                    <p class="text-anito-gray text-sm font-sans">
+                      {{ request.reason }}
+                    </p>
+                  </div>
+                </div>
 
-            <div
-              v-if="request.requested_in || request.requested_out"
-              class="flex flex-wrap gap-4 text-sm"
-            >
-              <div v-if="request.requested_in" class="flex items-center gap-2">
-                <span class="text-anito-gray font-sans font-light"
-                  >Requested time in:</span
+                <div
+                  v-if="request.requested_in || request.requested_out"
+                  class="flex flex-wrap gap-6"
                 >
-                <span class="text-anito-black font-sans font-medium">{{
-                  request.requested_in
-                }}</span>
-              </div>
-              <div v-if="request.requested_out" class="flex items-center gap-2">
-                <span class="text-anito-gray font-sans font-light"
-                  >Requested time out:</span
-                >
-                <span class="text-anito-black font-sans font-medium">{{
-                  request.requested_out
-                }}</span>
-              </div>
-            </div>
+                  <div
+                    v-if="request.requested_in"
+                    class="flex items-start gap-2"
+                  >
+                    <div>
+                      <p class="text-xs font-medium text-anito-black">
+                        Requested Time In
+                      </p>
+                      <p class="text-sm font-sans text-anito-gray">
+                        {{ request.requested_in }}
+                      </p>
+                    </div>
+                  </div>
+                  <div
+                    v-if="request.requested_out"
+                    class="flex items-start gap-2"
+                  >
+                    <div>
+                      <p class="text-xs font-medium text-anito-black">
+                        Requested Time Out
+                      </p>
+                      <p class="text-sm font-sans text-anito-gray">
+                        {{ request.requested_out }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-            <div class="text-xs text-anito-gray font-sans font-light">
-              Requested: {{ formatDateTime(request.created_at) }}
+                <div class="flex items-center gap-2 text-xs text-anito-gray">
+                  <svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                  </svg>
+                  Requested {{ formatDateTime(request.created_at) }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -214,7 +483,10 @@
               <td class="px-4 py-3 text-sm font-sans text-anito-black">
                 {{ formatDate(request.date) }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate" :title="request.reason">
+              <td
+                class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate"
+                :title="request.reason"
+              >
                 {{ request.reason }}
               </td>
               <td class="px-4 py-3">
@@ -332,16 +604,84 @@ const showRejectModal = ref(false);
 const selectedRequest = ref(null);
 const rejectSubmitting = ref(false);
 const rejectError = ref("");
+const expandedRequests = ref([]);
+const selectedRequests = ref([]);
 
 const loading = computed(() => rectificationsStore.loading);
 const error = computed(() => rectificationsStore.error);
 const allRequests = computed(() => rectificationsStore.requests);
 const pendingRequests = computed(() => rectificationsStore.pendingRequests);
 const pendingCount = computed(() => pendingRequests.value.length);
+const allSelected = computed(() => {
+  return (
+    pendingRequests.value.length > 0 &&
+    selectedRequests.value.length === pendingRequests.value.length
+  );
+});
 
 onMounted(async () => {
   await rectificationsStore.fetchRequests();
 });
+
+function toggleRequestDetails(requestId) {
+  const index = expandedRequests.value.indexOf(requestId);
+  if (index > -1) {
+    expandedRequests.value.splice(index, 1);
+  } else {
+    expandedRequests.value.push(requestId);
+  }
+}
+
+function toggleRequestSelection(requestId) {
+  const index = selectedRequests.value.indexOf(requestId);
+  if (index > -1) {
+    selectedRequests.value.splice(index, 1);
+  } else {
+    selectedRequests.value.push(requestId);
+  }
+}
+
+function toggleSelectAll() {
+  if (allSelected.value) {
+    selectedRequests.value = [];
+  } else {
+    selectedRequests.value = pendingRequests.value.map((req) => req.id);
+  }
+}
+
+async function bulkApprove() {
+  if (selectedRequests.value.length === 0) return;
+
+  processing.value = "bulk";
+  const promises = selectedRequests.value.map((requestId) =>
+    rectificationsStore.updateRequestStatus(
+      requestId,
+      "approved",
+      authStore.profile?.id,
+    ),
+  );
+
+  await Promise.all(promises);
+  selectedRequests.value = [];
+  processing.value = null;
+}
+
+async function bulkReject() {
+  if (selectedRequests.value.length === 0) return;
+
+  processing.value = "bulk";
+  const promises = selectedRequests.value.map((requestId) =>
+    rectificationsStore.updateRequestStatus(
+      requestId,
+      "rejected",
+      authStore.profile?.id,
+    ),
+  );
+
+  await Promise.all(promises);
+  selectedRequests.value = [];
+  processing.value = null;
+}
 
 async function approveRequest(request) {
   processing.value = request.id;
