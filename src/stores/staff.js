@@ -44,11 +44,44 @@ export const useStaffStore = defineStore('staff', () => {
     return { ok: true }
   }
 
+  /**
+   * Update a staff row by id. Payload: { full_name?, bio_id? }.
+   */
+  async function updateStaff(id, payload) {
+    if (!id) return { ok: false, error: 'Missing staff id.' }
+    const updates = {}
+    if (payload.full_name != null) updates.full_name = String(payload.full_name).trim() || undefined
+    if (payload.bio_id != null) updates.bio_id = String(payload.bio_id).trim() || undefined
+    if (Object.keys(updates).length === 0) return { ok: false, error: 'Nothing to update.' }
+    const { error: err } = await supabase.from('staff').update(updates).eq('id', id)
+    if (err) return { ok: false, error: err.message }
+    await fetchStaff()
+    return { ok: true }
+  }
+
+  /**
+   * Delete a staff row. Fails if a profile is linked (bio_id FK). Attendance logs cascade-delete.
+   */
+  async function deleteStaff(id) {
+    if (!id) return { ok: false, error: 'Missing staff id.' }
+    const { error: err } = await supabase.from('staff').delete().eq('id', id)
+    if (err) {
+      if (err.code === '23503') {
+        return { ok: false, error: 'Cannot delete: a registered employee is linked to this staff (Bio ID). Unlink the profile first.' }
+      }
+      return { ok: false, error: err.message }
+    }
+    await fetchStaff()
+    return { ok: true }
+  }
+
   return {
     list,
     loading,
     error,
     fetchStaff,
     addFromList,
+    updateStaff,
+    deleteStaff,
   }
 })

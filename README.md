@@ -22,7 +22,10 @@ Minimal web-based team attendance management. Connects ZKTeco biometric devices 
 
 3. **Database** — Run **`sql/supabase-schema.sql`** in the Supabase SQL Editor so tables and the sign-up trigger exist.
 
-4. **Run**
+4. **Optional: Manager delete accounts** — To let managers remove employee accounts (auth user + profile), deploy the Edge Function:  
+   `supabase functions deploy delete-user` (from project root; requires Supabase CLI and `SUPABASE_SERVICE_ROLE_KEY` set in the function secrets).
+
+5. **Run**
    ```bash
    npm run dev
    ```

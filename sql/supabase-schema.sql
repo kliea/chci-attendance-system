@@ -124,6 +124,8 @@ create policy "Managers can insert staff"
   on public.staff for insert with check (public.is_manager());
 create policy "Managers can update staff"
   on public.staff for update using (public.is_manager());
+create policy "Managers can delete staff"
+  on public.staff for delete using (public.is_manager());
 
 -- RLS: attendance_logs — employee reads own (via profile.bio_id = staff.bio_id); managers read all
 alter table public.attendance_logs enable row level security;
