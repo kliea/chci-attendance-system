@@ -65,7 +65,19 @@ const routes = [
       {
         path: "rectify",
         name: "rectify",
-        component: () => import("@/views/employee/RectifyView.vue"),
+        redirect: { name: "rectify-status" },
+        meta: { employeeOnly: true },
+      },
+      {
+        path: "rectify/request",
+        name: "rectify-request",
+        component: () => import("@/views/employee/RectifyRequestView.vue"),
+        meta: { employeeOnly: true },
+      },
+      {
+        path: "rectify/status",
+        name: "rectify-status",
+        component: () => import("@/views/employee/RectifyStatusView.vue"),
         meta: { employeeOnly: true },
       },
     ],
