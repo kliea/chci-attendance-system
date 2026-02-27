@@ -36,42 +36,6 @@
         >
           {{ item.label }}
         </router-link>
-
-        <!-- Rectify Submenu -->
-        <div
-          class="relative"
-          @mouseenter="openRectifySubmenu"
-          @mouseleave="closeRectifySubmenu"
-        >
-          <button
-            @click="toggleRectifySubmenu"
-            class="nav-link w-full text-left flex items-center justify-between"
-            :class="{ 'nav-link-active': isRectifyActive }"
-          >
-            <span>Rectify</span>
-          </button>
-          <div
-            v-if="rectifySubmenuOpen"
-            class="ml-2 mt-1 space-y-0.5"
-            @mouseenter="keepRectifySubmenuOpen"
-            @mouseleave="closeRectifySubmenu"
-          >
-            <router-link
-              to="/rectify/request"
-              class="nav-link nav-link-submenu"
-              active-class="nav-link-submenu-active"
-            >
-              Request
-            </router-link>
-            <router-link
-              to="/rectify/status"
-              class="nav-link nav-link-submenu"
-              active-class="nav-link-submenu-active"
-            >
-              Status
-            </router-link>
-          </div>
-        </div>
       </template>
     </nav>
     <div class="border-t border-[#1e2228] p-3 mt-auto">
@@ -90,60 +54,28 @@ import { useAuthStore } from "@/stores/auth.js";
 const auth = useAuthStore();
 const route = useRoute();
 
-const rectifySubmenuOpen = ref(false);
-let hoverTimeout = null;
-
 const managerNav = [
-  { to: '/dashboard', label: 'Dashboard' },
-  { to: '/employees', label: 'Employees' },
-  { to: '/attendance', label: 'Employee DTR' },
-  { to: '/import', label: 'Import' },
-  { to: '/rectifications', label: 'Rectifications' },
-]
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/employees", label: "Employees" },
+  { to: "/attendance", label: "Employee DTR" },
+  { to: "/import", label: "Import" },
+  { to: "/rectifications", label: "Rectifications" },
+];
 
-const employeeNav = [{ to: "/my-attendance", label: "My Attendance" }];
-
-const isRectifyActive = computed(() => {
-  return route.path.startsWith("/rectify");
-});
-
-// Auto-open submenu when on rectify routes
-watch(
-  isRectifyActive,
-  (isActive) => {
-    if (isActive) {
-      rectifySubmenuOpen.value = true;
-    }
-  },
-  { immediate: true },
-);
-
-function toggleRectifySubmenu() {
-  rectifySubmenuOpen.value = !rectifySubmenuOpen.value;
-}
-
-function openRectifySubmenu() {
-  clearTimeout(hoverTimeout);
-  rectifySubmenuOpen.value = true;
-}
-
-function closeRectifySubmenu() {
-  hoverTimeout = setTimeout(() => {
-    if (!isRectifyActive.value) {
-      rectifySubmenuOpen.value = false;
-    }
-  }, 300); // 300ms delay before closing
-}
-
-function keepRectifySubmenuOpen() {
-  clearTimeout(hoverTimeout);
-}
+const employeeNav = [
+  { to: "/my-attendance", label: "My Attendance" },
+  { to: "/rectify", label: "Rectify" },
+];
 </script>
 
 <style scoped>
+/* tailwindcss @apply */
+/* stylelint-disable at-rule-no-unknown */
+/* eslint-disable-next-line at-rule-no-unknown */
 .nav-link {
   @apply block text-xs tracking-[0.12em] uppercase font-sans font-medium px-3 py-2 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
 }
+/* eslint-disable-next-line at-rule-no-unknown */
 .nav-link-active {
   @apply bg-[#131820] text-white;
   position: relative;
@@ -158,25 +90,6 @@ function keepRectifySubmenuOpen() {
   width: 0.25rem;
   height: 0.25rem;
   border-radius: 9999px;
-  background-color: #3A7CC3;
-}
-.nav-link-submenu {
-  @apply text-[11px] tracking-[0.1em] px-3 py-1.5 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
-}
-.nav-link-submenu-active {
-  @apply bg-[#131820] text-white;
-  position: relative;
-  padding-left: 1.5rem;
-}
-.nav-link-submenu-active::before {
-  content: "";
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0.1875rem;
-  height: 0.1875rem;
-  border-radius: 9999px;
-  background-color: #3A7CC3;
+  background-color: #3a7cc3;
 }
 </style>
