@@ -1,15 +1,19 @@
 <template>
   <div class="min-h-screen bg-anito-black flex">
-    <div class="hidden md:flex w-[60%] flex-col items-center justify-center p-12">
-      <p class="text-[10px] tracking-[0.3em] uppercase text-anito-blue-mid font-sans font-medium">HRIS</p>
-      <h1 class="font-display font-light text-[72px] tracking-wide text-white mt-2">
+    <div class="hidden md:flex relative overflow-hidden w-[60%] flex-col items-center justify-center p-12">
+      <!-- CHCI decorative background -->
+      <div class="absolute inset-0 -z-10 pointer-events-none">
+        <div class="chci-accent-left" />
+        <div class="chci-accent-right" />
+        <div class="chci-grid" />
+      </div>
+      <p class="hero-subtitle text-[10px] tracking-[0.3em] uppercase text-anito-blue-mid font-medium">HRIS</p>
+      <h1 class="hero-title font-light text-[72px] tracking-wide text-white mt-2">
         CHCI<span class="inline-block w-3 h-3 rounded-full bg-anito-blue-mid mb-1 ml-1 align-middle"></span>
       </h1>
       <div class="w-8 h-0.5 bg-anito-blue-mid my-4"></div>
-      <p
-        class="text-[10px] tracking-[0.3em] uppercase text-anito-gray font-sans font-light"
-      >
-        OJT Attendance Monitoring
+      <p class="hero-subtitle text-[10px] tracking-[0.3em] uppercase text-anito-gray font-light">
+        Attendance Monitoring System
       </p>
     </div>
     <div
@@ -17,9 +21,9 @@
     >
       <div class="w-full max-w-sm space-y-6">
         <h2
-          class="font-display font-light text-2xl tracking-wide text-anito-black md:hidden text-center"
+          class="hero-title font-light text-2xl tracking-wide text-anito-black md:hidden text-center"
         >
-          ANITO
+          CHCI
         </h2>
         <form class="space-y-5" @submit.prevent="handleSubmit">
           <div>
