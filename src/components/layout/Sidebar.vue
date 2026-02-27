@@ -69,9 +69,13 @@ const employeeNav = [
 </script>
 
 <style scoped>
+/* tailwindcss @apply */
+/* stylelint-disable at-rule-no-unknown */
+/* eslint-disable-next-line at-rule-no-unknown */
 .nav-link {
   @apply block text-xs tracking-[0.12em] uppercase font-sans font-medium px-3 py-2 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
 }
+/* eslint-disable-next-line at-rule-no-unknown */
 .nav-link-active {
   @apply bg-[#131820] text-white;
   position: relative;
@@ -86,25 +90,6 @@ const employeeNav = [
   width: 0.25rem;
   height: 0.25rem;
   border-radius: 9999px;
-  background-color: #3A7CC3;
-}
-.nav-link-submenu {
-  @apply text-[11px] tracking-[0.1em] px-3 py-1.5 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
-}
-.nav-link-submenu-active {
-  @apply bg-[#131820] text-white;
-  position: relative;
-  padding-left: 1.5rem;
-}
-.nav-link-submenu-active::before {
-  content: "";
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0.1875rem;
-  height: 0.1875rem;
-  border-radius: 9999px;
-  background-color: #3A7CC3;
+  background-color: #3a7cc3;
 }
 </style>
