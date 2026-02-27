@@ -1,5 +1,5 @@
 <template>
-  <label :for="forId" class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">
+  <label :for="forId" class="block text-xs tracking-[0.15em] uppercase text-anito-gray font-sans font-medium mb-1.5">
     <slot />
   </label>
 </template>
