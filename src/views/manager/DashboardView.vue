@@ -4,8 +4,8 @@
 
     <div class="grid grid-cols-3 gap-4 mb-6">
       <StatCard label="On time" :value="stats.onTime" highlight />
-      <StatCard label="Late" :value="stats.late" />
-      <StatCard label="Absent" :value="stats.absent" />
+      <StatCard label="Late" :value="stats.late" warn />
+      <StatCard label="Absent" :value="stats.absent" danger />
     </div>
 
     <Card>

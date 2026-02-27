@@ -1,10 +1,16 @@
 <template>
-  <div class="min-h-screen bg-anito-black flex items-center justify-center p-6">
+  <div class="relative overflow-hidden min-h-screen bg-anito-black flex items-center justify-center p-6">
+    <!-- CHCI decorative background -->
+    <div class="absolute inset-0 -z-10 pointer-events-none">
+      <div class="chci-accent-left" />
+      <div class="chci-accent-right" />
+      <div class="chci-grid" />
+    </div>
     <div class="w-full max-w-sm">
       <h1
-        class="font-display font-light text-2xl tracking-wide text-white mb-8 text-center"
+        class="hero-title font-light text-2xl tracking-wide text-white mb-8 text-center"
       >
-        ANITO<span
+        CHCI<span
           class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"
         ></span>
       </h1>
