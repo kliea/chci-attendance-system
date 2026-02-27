@@ -23,10 +23,16 @@
     </header>
 
     <!-- Success/error messages (outside modal) -->
-    <div v-if="submitSuccess" class="mb-4 p-3 rounded bg-green-50 text-green-800 text-sm font-sans">
+    <div
+      v-if="submitSuccess"
+      class="mb-4 p-3 rounded bg-green-50 text-green-800 text-sm font-sans"
+    >
       {{ submitSuccess }}
     </div>
-    <div v-if="submitError" class="mb-4 p-3 rounded bg-red-50 text-red-700 text-sm font-sans">
+    <div
+      v-if="submitError"
+      class="mb-4 p-3 rounded bg-red-50 text-red-700 text-sm font-sans"
+    >
       {{ submitError }}
     </div>
 
@@ -37,11 +43,13 @@
       @click.self="closeRectifyModal"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto border border-anito-gray-light overflow-hidden"
+        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden"
       >
         <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
           <div class="flex items-center justify-between">
-            <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
+            <h2
+              class="font-display font-light text-lg tracking-wide text-anito-black"
+            >
               DTR Rectification Request Form
             </h2>
             <button
@@ -72,7 +80,9 @@
           </div>
 
           <div>
-            <span class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2">
+            <span
+              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
+            >
               Nature of rectification *
             </span>
             <div class="flex flex-wrap gap-4">
@@ -83,7 +93,9 @@
                   value="time_in"
                   class="text-anito-blue-mid focus:ring-anito-blue-mid"
                 />
-                <span class="text-sm font-sans text-anito-black">FR1: Missed Logged-In</span>
+                <span class="text-sm font-sans text-anito-black"
+                  >Missed Logged-In</span
+                >
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
                 <input
@@ -92,7 +104,9 @@
                   value="time_out"
                   class="text-anito-blue-mid focus:ring-anito-blue-mid"
                 />
-                <span class="text-sm font-sans text-anito-black">FR2: Missed Logged-Out</span>
+                <span class="text-sm font-sans text-anito-black"
+                  >Missed Logged-Out</span
+                >
               </label>
             </div>
           </div>
@@ -204,7 +218,10 @@
               <td class="px-4 py-3 text-sm font-sans text-anito-black">
                 {{ formatDate(request.date) }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate" :title="request.reason">
+              <td
+                class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate"
+                :title="request.reason"
+              >
                 {{ request.reason }}
               </td>
               <td class="px-4 py-3">
