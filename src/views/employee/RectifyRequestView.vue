@@ -43,26 +43,60 @@
       @click.self="closeRectifyModal"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto border border-anito-gray-light overflow-hidden"
+        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden"
       >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+        <div class="px-5 py-3 border-b border-anito-gray-light bg-white">
           <div class="flex items-center justify-between">
             <h2
-              class="font-display font-light text-lg tracking-wide text-anito-black"
+              class="font-display font-light text-base tracking-wide text-anito-black"
             >
               DTR Rectification Request Form
             </h2>
             <button
               type="button"
-              class="text-anito-gray hover:text-anito-black transition-colors"
+              class="text-anito-gray hover:text-anito-black transition-colors text-sm"
               aria-label="Close"
               @click="closeRectifyModal"
             >
               ✕
             </button>
           </div>
+
+          <!-- Tabs -->
+          <div class="flex gap-3 mt-3">
+            <button
+              type="button"
+              :class="[
+                'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium transition-colors duration-150',
+                activeTab === 'request'
+                  ? 'bg-anito-black text-white'
+                  : 'border border-anito-gray-light text-anito-black hover:border-anito-black',
+              ]"
+              @click="activeTab = 'request'"
+            >
+              Request
+            </button>
+            <button
+              type="button"
+              :class="[
+                'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium transition-colors duration-150',
+                activeTab === 'review'
+                  ? 'bg-anito-black text-white'
+                  : 'border border-anito-gray-light text-anito-black hover:border-anito-black',
+              ]"
+              @click="activeTab = 'review'"
+              :disabled="rectifications.length === 0"
+            >
+              Review ({{ rectifications.length }})
+            </button>
+          </div>
         </div>
-        <form class="p-6 space-y-4" @submit.prevent="submitRequest">
+        <!-- Request Tab -->
+        <form
+          v-if="activeTab === 'request'"
+          class="p-6 space-y-4"
+          @submit.prevent="addRectification"
+        >
           <div>
             <label
               for="rectify-date"
@@ -94,7 +128,7 @@
                   class="text-anito-blue-mid focus:ring-anito-blue-mid"
                 />
                 <span class="text-sm font-sans text-anito-black"
-                  >FR1: Missed Logged-In</span
+                  >Missed Logged-In</span
                 >
               </label>
               <label class="flex items-center gap-2 cursor-pointer">
@@ -105,7 +139,7 @@
                   class="text-anito-blue-mid focus:ring-anito-blue-mid"
                 />
                 <span class="text-sm font-sans text-anito-black"
-                  >FR2: Missed Logged-Out</span
+                  >Missed Logged-Out</span
                 >
               </label>
             </div>
@@ -147,20 +181,292 @@
           <div class="flex gap-2 pt-2 border-t border-anito-gray-light pt-4">
             <button
               type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              class="inline-flex items-center gap-2 px-6 py-3 border border-anito-gray-light text-anito-black text-[11px] tracking-[0.2em] uppercase font-semibold rounded-xl hover:border-anito-black hover:bg-anito-gray-light/50 transition-all duration-150 shadow-sm"
               @click="closeRectifyModal"
             >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                ></path>
+              </svg>
               Cancel
             </button>
             <button
               type="submit"
-              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium disabled:opacity-50"
-              :disabled="submitting"
+              class="inline-flex items-center gap-2 bg-anito-blue-mid text-white text-[11px] tracking-[0.2em] uppercase font-semibold px-6 py-3 rounded-xl hover:bg-anito-blue-deep transition-all duration-150 shadow-sm"
             >
-              {{ submitting ? "Submitting…" : "Submit Request" }}
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4v16m8-8H4"
+                ></path>
+              </svg>
+              Add Rectification
             </button>
           </div>
         </form>
+
+        <!-- Review Tab -->
+        <div v-else-if="activeTab === 'review'" class="p-4">
+          <div
+            v-if="rectifications.length === 0"
+            class="text-center text-anito-gray text-sm font-sans font-light py-8"
+          >
+            <div
+              class="w-12 h-12 bg-anito-gray-light/20 rounded-full flex items-center justify-center mx-auto mb-3"
+            >
+              <svg
+                class="w-6 h-6 text-anito-gray"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                ></path>
+              </svg>
+            </div>
+            <p class="text-anito-gray font-medium text-sm">
+              No rectifications added yet
+            </p>
+            <p class="text-anito-gray text-xs mt-1">
+              Add your first rectification to get started
+            </p>
+          </div>
+
+          <div v-else class="space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-anito-black">
+                Review Rectifications
+              </h3>
+              <div
+                class="flex items-center gap-1.5 px-2 py-1 bg-anito-blue-mid/10 rounded-full"
+              >
+                <svg
+                  class="w-3.5 h-3.5 text-anito-blue-mid"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <span class="text-xs font-medium text-anito-blue-mid"
+                  >{{ rectifications.length }}
+                  {{ rectifications.length === 1 ? "item" : "items" }}</span
+                >
+              </div>
+            </div>
+
+            <!-- Review Table -->
+            <div
+              class="border border-anito-blue-mid/20 rounded-lg overflow-hidden shadow-sm"
+            >
+              <table class="w-full">
+                <thead
+                  class="bg-anito-blue-mid/5 border-b border-anito-blue-mid/10"
+                >
+                  <tr>
+                    <th
+                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                    >
+                      Date
+                    </th>
+                    <th
+                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                    >
+                      Type
+                    </th>
+                    <th
+                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                    >
+                      Time
+                    </th>
+                    <th
+                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                    >
+                      Reason
+                    </th>
+                    <th
+                      class="text-center px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-anito-blue-mid/10">
+                  <tr
+                    v-for="(rect, index) in rectifications"
+                    :key="index"
+                    class="bg-white hover:bg-anito-blue-mid/5 transition-colors duration-150"
+                  >
+                    <td
+                      class="px-4 py-2.5 text-xs font-medium text-anito-black"
+                    >
+                      {{ formatDate(rect.date) }}
+                    </td>
+                    <td class="px-4 py-2.5">
+                      <span
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        :class="
+                          rect.nature === 'time_in'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-blue-100 text-blue-800'
+                        "
+                      >
+                        <svg
+                          class="w-2.5 h-2.5 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            v-if="rect.nature === 'time_in'"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                          ></path>
+                          <path
+                            v-else
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M13 7l4 4m0 0l-4 4m4-4H7"
+                          ></path>
+                        </svg>
+                        {{ rect.nature === "time_in" ? "Time In" : "Time Out" }}
+                      </span>
+                    </td>
+                    <td
+                      class="px-4 py-2.5 text-xs font-medium text-anito-black"
+                    >
+                      {{ rect.rectifiedTime }}
+                    </td>
+                    <td
+                      class="px-4 py-2.5 text-xs text-anito-gray max-w-xs"
+                      :title="rect.reason"
+                    >
+                      <div class="truncate font-medium">{{ rect.reason }}</div>
+                    </td>
+                    <td class="px-4 py-2.5 text-center">
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-all duration-150"
+                        @click="removeRectification(index)"
+                      >
+                        <svg
+                          class="w-2.5 h-2.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          ></path>
+                        </svg>
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-2 pt-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-4 py-2 border border-anito-gray-light text-anito-black text-[10px] tracking-[0.15em] uppercase font-semibold rounded-lg hover:border-anito-black hover:bg-anito-gray-light/50 transition-all duration-150 shadow-sm"
+                @click="activeTab = 'request'"
+              >
+                <svg
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  ></path>
+                </svg>
+                Add Another
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-anito-black text-white text-[10px] tracking-[0.15em] uppercase font-semibold rounded-lg hover:bg-anito-blue-deep transition-all duration-150 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="submitting"
+                @click="submitAllRequests"
+              >
+                <svg
+                  v-if="!submitting"
+                  class="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  ></path>
+                </svg>
+                <svg
+                  v-else
+                  class="w-3.5 h-3.5 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke-width="2"
+                    stroke-dasharray="31.416"
+                    stroke-dashoffset="31.416"
+                    class="animate-spin"
+                    style="transform-origin: center"
+                  ></circle>
+                </svg>
+                {{
+                  submitting
+                    ? "Submitting…"
+                    : `Submit All (${rectifications.length})`
+                }}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -175,6 +481,8 @@ const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
 
 const showRectifyModal = ref(false);
+const activeTab = ref("request"); // 'request' | 'review'
+const rectifications = ref([]); // Array to store multiple rectifications
 
 const form = reactive({
   date: "",
@@ -191,40 +499,82 @@ function openRectifyModal() {
   resetForm();
   submitError.value = "";
   submitSuccess.value = "";
+  activeTab.value = "request";
+  rectifications.value = [];
   showRectifyModal.value = true;
 }
 
 function closeRectifyModal() {
   showRectifyModal.value = false;
   resetForm();
+  rectifications.value = [];
+  activeTab.value = "request";
 }
 
-async function submitRequest() {
+function addRectification() {
+  // Validate form
+  if (!form.date || !form.reason || !form.rectifiedTime) {
+    return;
+  }
+
+  // Add to rectifications array
+  rectifications.value.push({
+    date: form.date,
+    nature: form.nature,
+    reason: form.reason.trim(),
+    rectifiedTime: form.rectifiedTime,
+  });
+
+  // Reset form and switch to review tab
+  resetForm();
+  activeTab.value = "review";
+}
+
+function removeRectification(index) {
+  rectifications.value.splice(index, 1);
+}
+
+async function submitAllRequests() {
+  if (rectifications.value.length === 0) return;
+
   submitting.value = true;
   submitError.value = "";
   submitSuccess.value = "";
 
-  const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
-  const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
+  try {
+    // Submit all rectifications
+    const promises = rectifications.value.map((rect) => {
+      const requestedIn = rect.nature === "time_in" ? rect.rectifiedTime : null;
+      const requestedOut =
+        rect.nature === "time_out" ? rect.rectifiedTime : null;
 
-  const result = await rectificationsStore.createRequest({
-    userId: authStore.profile?.id,
-    attendanceId: null,
-    date: form.date,
-    reason: form.reason.trim(),
-    requestedIn: requestedIn || null,
-    requestedOut: requestedOut || null,
-  });
+      return rectificationsStore.createRequest({
+        userId: authStore.profile?.id,
+        attendanceId: null,
+        date: rect.date,
+        reason: rect.reason,
+        requestedIn: requestedIn || null,
+        requestedOut: requestedOut || null,
+      });
+    });
 
-  if (result.ok) {
-    submitSuccess.value =
-      "Your rectification request has been submitted successfully.";
-    closeRectifyModal();
-    setTimeout(() => {
-      submitSuccess.value = "";
-    }, 5000);
-  } else {
-    submitError.value = result.error || "Failed to submit request";
+    const results = await Promise.all(promises);
+
+    // Check if all were successful
+    const allSuccessful = results.every((result) => result.ok);
+
+    if (allSuccessful) {
+      submitSuccess.value = `Successfully submitted ${rectifications.value.length} rectification request(s).`;
+      closeRectifyModal();
+      setTimeout(() => {
+        submitSuccess.value = "";
+      }, 5000);
+    } else {
+      const failedCount = results.filter((result) => !result.ok).length;
+      submitError.value = `Failed to submit ${failedCount} request(s). Please try again.`;
+    }
+  } catch (error) {
+    submitError.value = "An error occurred while submitting requests.";
   }
 
   submitting.value = false;
@@ -236,5 +586,10 @@ function resetForm() {
   form.reason = "";
   form.rectifiedTime = "";
   rectificationsStore.clearSubmitStatus();
+}
+
+function formatDate(dateString) {
+  if (!dateString) return "—";
+  return new Date(dateString).toLocaleDateString();
 }
 </script>
