@@ -75,6 +75,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAttendanceStore } from '@/stores/attendance.js'
 import { useStaffStore } from '@/stores/staff.js'
 import { formatDate, formatTime } from '@/composables/useFormatters.js'
+import { LATE_THRESHOLD_STRING } from '@/config/constants.js'
 import {
   Button,
   Card,
@@ -92,7 +93,7 @@ const selectedDate = ref('')
 const currentPage = ref(1)
 const pageSize = 5
 
-const LATE_THRESHOLD = '08:30' // time_in beyond this is considered late
+const LATE_THRESHOLD = LATE_THRESHOLD_STRING
 
 /** Returns true if time string (e.g. "08:45:00" or "09:00") is after 08:30. */
 function isLate(timeIn) {

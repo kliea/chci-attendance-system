@@ -7,10 +7,12 @@
     @drop.prevent="handleDrop"
   >
     <input
+      :id="inputId"
       ref="fileInput"
       type="file"
       accept=".dat"
       class="hidden"
+      aria-label="Upload .dat file"
       @change="handleSelect"
     />
     <svg class="text-anito-gray w-8 h-8 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -18,18 +20,22 @@
     </svg>
     <p class="text-sm text-anito-gray font-sans font-light">Drop a .dat file here or click to browse</p>
     <p class="text-anito-gray text-xs mt-1 font-sans font-light">Attendance .dat only. Max 10MB. From ZKTeco devices.</p>
-    <Button variant="secondary" class="mt-4" @click="fileInput?.click()">
-      Choose file
-    </Button>
+    <label :for="inputId" class="mt-4 inline-block cursor-pointer">
+      <Button variant="secondary" tag="span" role="button" tabindex="0">
+        Choose file
+      </Button>
+    </label>
     <p v-if="error" class="text-red-600 text-sm mt-3">{{ error }}</p>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Button } from '@/components/ui'
 
 const MAX_SIZE = 10 * 1024 * 1024 // 10MB
+
+const inputId = computed(() => `file-dropzone-${Math.random().toString(36).slice(2)}`)
 
 const emit = defineEmits(['file'])
 const fileInput = ref(null)
