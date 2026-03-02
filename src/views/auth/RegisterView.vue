@@ -127,7 +127,7 @@
             ></path>
           </svg>
         </div>
-        <h2 class="text-xl font-semibold text-anito-black mb-2">
+        <h2 class="font-display font-light text-2xl tracking-wide text-anito-black mb-2">
           Check your email
         </h2>
         <p class="text-anito-gray mb-6">
@@ -151,11 +151,12 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.js";
-import { supabase } from "@/lib/supabase.js";
+import { useStaffStore } from "@/stores/staff.js";
 import { Button, Input, Label, Dialog } from "@/components/ui";
 
 const router = useRouter();
 const auth = useAuthStore();
+const staffStore = useStaffStore();
 
 const unregisteredStaff = ref([]);
 const staffLoading = ref(false);
@@ -178,9 +179,14 @@ watch(selectedStaff, (s) => {
 
 async function fetchUnregisteredStaff() {
   staffLoading.value = true;
-  const { data, error } = await supabase.rpc("get_unregistered_staff");
-  staffLoading.value = false;
-  if (!error) unregisteredStaff.value = data ?? [];
+  try {
+    const data = await staffStore.fetchUnregisteredStaff();
+    unregisteredStaff.value = data;
+  } catch {
+    unregisteredStaff.value = [];
+  } finally {
+    staffLoading.value = false;
+  }
 }
 
 onMounted(async () => {
@@ -204,6 +210,6 @@ async function handleSubmit() {
 
 function handleModalClose() {
   showEmailModal.value = false;
-  router.push("/login");
+  router.push({ name: "login" });
 }
 </script>

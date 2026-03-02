@@ -66,9 +66,9 @@
       <div v-if="selectedRequests.length > 0" class="flex gap-2">
         <button
           type="button"
-          class="bg-green-600 text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-green-600 text-white text-xs font-medium px-4 py-2 rounded hover:bg-green-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="processing === 'bulk'"
-          @click="bulkApprove"
+          @click="openBulkConfirm('approve')"
         >
           <svg
             v-if="processing !== 'bulk'"
@@ -106,9 +106,9 @@
         </button>
         <button
           type="button"
-          class="bg-red-600 text-white text-xs font-medium px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-red-600 text-white text-xs font-medium px-4 py-2 rounded hover:bg-red-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="processing === 'bulk'"
-          @click="bulkReject"
+          @click="openBulkConfirm('reject')"
         >
           <svg
             v-if="processing !== 'bulk'"
@@ -157,15 +157,8 @@
       >
         Pending Requests ({{ pendingCount }})
       </h2>
-      <div v-if="loading" class="p-8 space-y-2">
-        <div
-          class="h-0.5 w-full bg-anito-gray-light rounded-full overflow-hidden"
-        >
-          <div
-            class="h-full bg-anito-blue-mid animate-pulse rounded-full transition-all duration-300"
-            style="width: 60%"
-          ></div>
-        </div>
+      <div v-if="loading" class="p-8">
+        <LoadingBar />
       </div>
       <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
       <div
@@ -194,7 +187,7 @@
                 </label>
                 <div
                   class="cursor-pointer flex-1 flex items-center gap-3"
-                  @click="toggleRequestDetails(request.id)"
+                  @click="openDetailModal(request)"
                 >
                   <span
                     class="text-xs font-medium px-1.5 py-0.5 rounded-full w-20 text-center"
@@ -302,105 +295,13 @@
                   </svg>
                   {{ processing === request.id ? "…" : "Reject" }}
                 </button>
-                <svg
-                  class="w-3 h-3 text-anito-gray transition-transform duration-200"
-                  :class="{
-                    'rotate-180': expandedRequests.includes(request.id),
-                  }"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <button
+                  type="button"
+                  class="text-anito-blue-mid text-xs font-sans font-medium hover:underline"
+                  @click.stop="openDetailModal(request)"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Expanded Details -->
-          <div
-            v-if="expandedRequests.includes(request.id)"
-            class="px-4 pb-4 border-t border-anito-gray-light"
-          >
-            <div class="pt-4 space-y-3">
-              <div class="bg-anito-gray-light/30 rounded-lg p-4 space-y-3">
-                <div class="flex items-start gap-2">
-                  <svg
-                    class="w-4 h-4 text-anito-gray mt-0.5 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    ></path>
-                  </svg>
-                  <div>
-                    <p class="text-sm font-medium text-anito-black mb-1">
-                      Reason
-                    </p>
-                    <p class="text-anito-gray text-sm font-sans">
-                      {{ request.reason }}
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  v-if="request.requested_in || request.requested_out"
-                  class="flex flex-wrap gap-6"
-                >
-                  <div
-                    v-if="request.requested_in"
-                    class="flex items-start gap-2"
-                  >
-                    <div>
-                      <p class="text-xs font-medium text-anito-black">
-                        Requested Time In
-                      </p>
-                      <p class="text-sm font-sans text-anito-gray">
-                        {{ request.requested_in }}
-                      </p>
-                    </div>
-                  </div>
-                  <div
-                    v-if="request.requested_out"
-                    class="flex items-start gap-2"
-                  >
-                    <div>
-                      <p class="text-xs font-medium text-anito-black">
-                        Requested Time Out
-                      </p>
-                      <p class="text-sm font-sans text-anito-gray">
-                        {{ request.requested_out }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-2 text-xs text-anito-gray">
-                  <svg
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    ></path>
-                  </svg>
-                  Requested {{ formatDateTime(request.created_at) }}
-                </div>
+                  View
+                </button>
               </div>
             </div>
           </div>
@@ -418,15 +319,8 @@
       >
         All Requests ({{ allRequests.length }})
       </h2>
-      <div v-if="loading" class="p-8 space-y-2">
-        <div
-          class="h-0.5 w-full bg-anito-gray-light rounded-full overflow-hidden"
-        >
-          <div
-            class="h-full bg-anito-blue-mid animate-pulse rounded-full transition-all duration-300"
-            style="width: 60%"
-          ></div>
-        </div>
+      <div v-if="loading" class="p-8">
+        <LoadingBar />
       </div>
       <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
       <div
@@ -502,13 +396,18 @@
               </td>
               <td class="px-4 py-3">
                 <button
-                  v-if="request.status === 'pending'"
                   type="button"
                   class="text-anito-blue-mid text-xs font-sans font-medium hover:underline"
-                  @click="viewRequestDetails(request)"
+                  @click="openDetailModal(request)"
                 >
-                  Review
+                  {{ request.status === 'pending' ? 'Review' : 'View' }}
                 </button>
+                <span
+                  v-if="request.status !== 'pending'"
+                  class="text-anito-gray text-xs font-sans font-light ml-2"
+                >
+                  {{ formatDateTime(request.reviewed_at) }}
+                </span>
                 <span
                   v-else
                   class="text-anito-gray text-xs font-sans font-light"
@@ -521,6 +420,101 @@
         </table>
       </div>
     </section>
+
+    <!-- Request detail modal -->
+    <div
+      v-if="detailModalRequest"
+      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      @click.self="closeDetailModal"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto border border-anito-gray-light overflow-hidden"
+      >
+        <div class="px-6 py-4 border-b border-anito-gray-light flex items-center justify-between">
+          <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
+            Rectification request
+          </h2>
+          <button
+            type="button"
+            class="text-anito-gray hover:text-anito-black transition-colors"
+            aria-label="Close"
+            @click="closeDetailModal"
+          >
+            ✕
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          <div>
+            <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Employee</p>
+            <p class="text-sm font-sans text-anito-black">{{ getRequesterName(detailModalRequest.requester) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Date</p>
+            <p class="text-sm font-sans text-anito-black">{{ formatDate(detailModalRequest.date) }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Reason</p>
+            <p class="text-sm font-sans text-anito-black">{{ detailModalRequest.reason }}</p>
+          </div>
+          <div
+            v-if="detailModalRequest.requested_in || detailModalRequest.requested_out"
+            class="flex flex-wrap gap-6"
+          >
+            <div v-if="detailModalRequest.requested_in">
+              <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Requested time in</p>
+              <p class="text-sm font-sans text-anito-black">{{ detailModalRequest.requested_in }}</p>
+            </div>
+            <div v-if="detailModalRequest.requested_out">
+              <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Requested time out</p>
+              <p class="text-sm font-sans text-anito-black">{{ detailModalRequest.requested_out }}</p>
+            </div>
+          </div>
+          <div class="text-xs text-anito-gray">
+            Requested {{ formatDateTime(detailModalRequest.created_at) }}
+          </div>
+          <div v-if="detailModalRequest.status !== 'pending'" class="flex gap-2 text-xs text-anito-gray">
+            <span
+              :class="getStatusClass(detailModalRequest.status)"
+              class="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded font-sans font-medium"
+            >
+              {{ detailModalRequest.status }}
+            </span>
+            <span v-if="detailModalRequest.reviewed_at">
+              Reviewed {{ formatDateTime(detailModalRequest.reviewed_at) }}
+              <span v-if="detailModalRequest.reviewer"> by {{ detailModalRequest.reviewer.full_name }}</span>
+            </span>
+          </div>
+        </div>
+        <div
+          v-if="detailModalRequest.status === 'pending'"
+          class="px-6 py-4 border-t border-anito-gray-light flex gap-2 justify-end"
+        >
+          <button
+            type="button"
+            class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black font-sans font-medium"
+            @click="closeDetailModal"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="bg-red-600 text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-red-700 font-sans font-medium disabled:opacity-50"
+            :disabled="processing === detailModalRequest.id || processing === 'bulk'"
+            @click="openRejectModal(detailModalRequest); closeDetailModal()"
+          >
+            Reject
+          </button>
+          <button
+            type="button"
+            class="bg-green-600 text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-green-700 font-sans font-medium disabled:opacity-50"
+            :disabled="processing === detailModalRequest.id || processing === 'bulk'"
+            @click="handleApproveFromModal"
+          >
+            {{ processing === detailModalRequest.id ? '…' : 'Approve' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Reject Modal -->
     <div
@@ -587,6 +581,24 @@
         </form>
       </div>
     </div>
+
+    <!-- Bulk action confirmation -->
+    <Dialog v-model="showBulkConfirm" max-width="max-w-md">
+      <template #header>
+        <h2 class="font-display font-light text-xl tracking-wide text-anito-black">
+          Confirm Bulk Action
+        </h2>
+      </template>
+      <p class="text-anito-gray font-sans font-light mb-6">
+        You are about to {{ bulkConfirmAction === 'approve' ? 'approve' : 'reject' }} {{ selectedRequests.length }} request(s). This cannot be undone.
+      </p>
+      <div class="flex gap-2 justify-end">
+        <Button variant="secondary" @click="showBulkConfirm = false">Cancel</Button>
+        <Button variant="primary" @click="confirmBulkAction">
+          Confirm
+        </Button>
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -594,9 +606,12 @@
 import { ref, computed, onMounted } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
+import { useFormatters } from "@/composables/useFormatters.js";
+import LoadingBar from "@/components/ui/LoadingBar.vue";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
+const { formatDate, formatDateTime, getStatusClass, getRequesterName } = useFormatters();
 
 const activeTab = ref("pending");
 const processing = ref(null);
@@ -604,8 +619,10 @@ const showRejectModal = ref(false);
 const selectedRequest = ref(null);
 const rejectSubmitting = ref(false);
 const rejectError = ref("");
-const expandedRequests = ref([]);
+const detailModalRequest = ref(null);
 const selectedRequests = ref([]);
+const showBulkConfirm = ref(false);
+const bulkConfirmAction = ref('approve');
 
 const loading = computed(() => rectificationsStore.loading);
 const error = computed(() => rectificationsStore.error);
@@ -623,13 +640,18 @@ onMounted(async () => {
   await rectificationsStore.fetchRequests();
 });
 
-function toggleRequestDetails(requestId) {
-  const index = expandedRequests.value.indexOf(requestId);
-  if (index > -1) {
-    expandedRequests.value.splice(index, 1);
-  } else {
-    expandedRequests.value.push(requestId);
-  }
+function openDetailModal(request) {
+  detailModalRequest.value = request;
+}
+
+function closeDetailModal() {
+  detailModalRequest.value = null;
+}
+
+async function handleApproveFromModal() {
+  if (!detailModalRequest.value) return;
+  await approveRequest(detailModalRequest.value);
+  closeDetailModal();
 }
 
 function toggleRequestSelection(requestId) {
@@ -649,31 +671,23 @@ function toggleSelectAll() {
   }
 }
 
-async function bulkApprove() {
+function openBulkConfirm(action) {
   if (selectedRequests.value.length === 0) return;
-
-  processing.value = "bulk";
-  const promises = selectedRequests.value.map((requestId) =>
-    rectificationsStore.updateRequestStatus(
-      requestId,
-      "approved",
-      authStore.profile?.id,
-    ),
-  );
-
-  await Promise.all(promises);
-  selectedRequests.value = [];
-  processing.value = null;
+  bulkConfirmAction.value = action;
+  showBulkConfirm.value = true;
 }
 
-async function bulkReject() {
+async function confirmBulkAction() {
+  const action = bulkConfirmAction.value;
+  showBulkConfirm.value = false;
   if (selectedRequests.value.length === 0) return;
 
   processing.value = "bulk";
+  const status = action === "approve" ? "approved" : "rejected";
   const promises = selectedRequests.value.map((requestId) =>
     rectificationsStore.updateRequestStatus(
       requestId,
-      "rejected",
+      status,
       authStore.profile?.id,
     ),
   );
@@ -691,7 +705,9 @@ async function approveRequest(request) {
     authStore.profile?.id,
   );
   if (!result.ok) {
-    console.error("Failed to approve request:", result.error);
+    if (import.meta.env.DEV) {
+      console.error("Failed to approve request:", result.error);
+    }
   }
   processing.value = null;
 }
@@ -729,32 +745,4 @@ async function rejectRequest() {
   rejectSubmitting.value = false;
 }
 
-function viewRequestDetails(request) {
-  // Could open a detailed view modal, for now just switch to pending tab
-  activeTab.value = "pending";
-}
-
-function getRequesterName(requester) {
-  if (!requester) return "Unknown";
-  return requester.full_name?.trim() || requester.bio_id || "Unknown";
-}
-
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString();
-}
-
-function formatDateTime(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleString();
-}
-
-function getStatusClass(status) {
-  const classes = {
-    pending: "bg-yellow-100 text-yellow-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-  };
-  return classes[status] || "bg-gray-100 text-gray-800";
-}
 </script>

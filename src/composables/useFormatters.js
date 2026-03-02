@@ -3,7 +3,36 @@
  */
 export function formatDate(d) {
   if (!d) return '—'
+  return new Date(d).toLocaleDateString()
+}
+
+/** Format date for raw display (YYYY-MM-DD). */
+export function formatDateRaw(d) {
+  if (!d) return '—'
   return typeof d === 'string' ? d.slice(0, 10) : d
+}
+
+export function formatDateTime(dateString) {
+  if (!dateString) return '—'
+  return new Date(dateString).toLocaleString()
+}
+
+export function getStatusClass(status) {
+  const classes = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    approved: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800',
+  }
+  return classes[status] || 'bg-gray-100 text-gray-800'
+}
+
+export function getRequesterName(requester) {
+  if (!requester) return 'Unknown'
+  return requester.full_name?.trim() || requester.bio_id || 'Unknown'
+}
+
+export function useFormatters() {
+  return { formatDate, formatDateTime, getStatusClass, getRequesterName }
 }
 
 export function formatTime(t) {

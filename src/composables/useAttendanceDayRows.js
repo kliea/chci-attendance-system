@@ -5,6 +5,7 @@
  */
 
 import { formatTimeAmPm } from '@/composables/useFormatters.js'
+import { LATE_THRESHOLD_MINUTES } from '@/config/constants.js'
 
 export function timeToMinutes(t) {
   if (t == null || t === '') return null
@@ -17,22 +18,26 @@ export function timeToMinutes(t) {
 }
 
 /**
- * Hours rendered for expected schedule 8:00 AM–5:00 PM (8 h).
- * Grace: late until 8:30 AM; expected out = time_in + 8 h (or 5:30 if in by 8:30).
- * Late mins = minutes after 8:30. Undertime = max(0, expected_out − time_out).
- * Hours = 8 − (late/60) − (undertime/60), cap 0–8.
+ * Hours rendered for expected schedule (8h work).
+ * Grace: not late if time_in is by 8:30 AM.
+ * Late mins = minutes after 8:30 (deducted from 8h).
+ * If ON TIME (in by 8:30): expected out = time_in + 9h (e.g. 8:25 in → 5:25 out).
+ * If LATE (after 8:30): expected out = 5:30 PM (fixed).
+ * Undertime = max(0, expected_out − time_out). Hours = 8 − (late/60) − (undertime/60), cap 0–8.
  */
+const GRACE_END = LATE_THRESHOLD_MINUTES
+const WORK_MIN = 8 * 60          // 8 hours
+const EXPECTED_OUT_SPAN_MIN = 9 * 60  // on-time: expected out = time_in + 9h (8:25 → 5:25)
+const EXPECTED_OUT_IF_LATE = 17 * 60 + 30  // 5:30 PM (fixed for late arrivals)
+
 export function computeHoursRenderedForDay(timeInStr, timeOutStr) {
   const tin = timeToMinutes(timeInStr)
   const tout = timeToMinutes(timeOutStr)
   if (tin == null) return null
-  const SCHED_START = 8 * 60
-  const GRACE_END = 8 * 60 + 30
-  const WORK_MIN = 8 * 60
 
   const lateMinutes = tin <= GRACE_END ? 0 : Math.round(tin - GRACE_END)
-  const effectiveStart = tin < SCHED_START ? SCHED_START : tin
-  const expectedOutMinutes = effectiveStart + WORK_MIN
+  const isLate = lateMinutes > 0
+  const expectedOutMinutes = isLate ? EXPECTED_OUT_IF_LATE : tin + EXPECTED_OUT_SPAN_MIN
 
   let undertimeMinutes = 0
   if (tout != null) {

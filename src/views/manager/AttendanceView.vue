@@ -256,7 +256,9 @@ async function downloadAppendix24FillerTemplate() {
     a.click()
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5000)
   } catch (err) {
-    console.error('Filler template PDF failed:', err)
+    if (import.meta.env.DEV) {
+      console.error('Filler template PDF failed:', err)
+    }
   } finally {
     appendix24TemplateLoading.value = false
   }

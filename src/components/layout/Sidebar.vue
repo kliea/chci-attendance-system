@@ -73,7 +73,7 @@ const employeeNav = [
 /* stylelint-disable at-rule-no-unknown */
 /* eslint-disable-next-line at-rule-no-unknown */
 .nav-link {
-  @apply block text-xs tracking-[0.12em] uppercase font-sans font-medium px-3 py-2 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
+  @apply block text-[10px] tracking-[0.18em] uppercase font-sans font-medium px-3 py-2 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
 }
 /* eslint-disable-next-line at-rule-no-unknown */
 .nav-link-active {

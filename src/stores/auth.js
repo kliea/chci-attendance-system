@@ -40,7 +40,9 @@ export const useAuthStore = defineStore("auth", {
           this.profile = null;
         }
       } catch (err) {
-        console.error("Auth init error:", err);
+        if (import.meta.env.DEV) {
+          console.error("Auth init error:", err);
+        }
         this.user = null;
         this.profile = null;
         this.error = err?.message ?? "Failed to load session";
@@ -58,12 +60,14 @@ export const useAuthStore = defineStore("auth", {
       try {
         const { data, error } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id, full_name, role, bio_id")
           .eq("id", this.user.id)
           .maybeSingle();
 
         if (error) {
-          console.error("Profile fetch error:", error);
+          if (import.meta.env.DEV) {
+            console.error("Profile fetch error:", error);
+          }
           // Create minimal profile from auth user data to prevent crashes
           this.profile = {
             id: this.user.id,
@@ -76,7 +80,9 @@ export const useAuthStore = defineStore("auth", {
 
         this.profile = data;
       } catch (err) {
-        console.error("Profile fetch exception:", err);
+        if (import.meta.env.DEV) {
+          console.error("Profile fetch exception:", err);
+        }
         // Create minimal profile to prevent crashes
         this.profile = {
           id: this.user.id,
@@ -126,15 +132,22 @@ export const useAuthStore = defineStore("auth", {
       try {
         await supabase.auth.signOut();
       } catch (err) {
-        console.error("Sign out error:", err);
+        if (import.meta.env.DEV) {
+          console.error("Sign out error:", err);
+        }
       } finally {
-        this.user = null;
-        this.profile = null;
-        this.error = null;
+        this.$reset();
       }
     },
 
     clearError() {
+      this.error = null;
+    },
+
+    $reset() {
+      this.user = null;
+      this.profile = null;
+      this.loading = false;
       this.error = null;
     },
   },

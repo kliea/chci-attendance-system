@@ -36,21 +36,21 @@
       {{ submitError }}
     </div>
 
-    <!-- DTR Rectification Request Modal -->
+    <!-- DTR Rectification Request Modal (Step 1: form → Step 2: list + submit) -->
     <div
       v-if="showRectifyModal"
       class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
       @click.self="closeRectifyModal"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden"
+        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden max-h-[90vh] flex flex-col"
       >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+        <div class="px-6 py-4 border-b border-anito-gray-light bg-white shrink-0">
           <div class="flex items-center justify-between">
             <h2
               class="font-display font-light text-lg tracking-wide text-anito-black"
             >
-              DTR Rectification Request Form
+              DTR Rectification Request
             </h2>
             <button
               type="button"
@@ -61,8 +61,41 @@
               ✕
             </button>
           </div>
+          <div class="flex gap-2 mt-3">
+            <span
+              :class="[
+                'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium',
+                modalStep === 1
+                  ? 'bg-anito-black text-white'
+                  : 'bg-anito-gray-light text-anito-gray',
+              ]"
+            >
+              Step 1 — Add request
+            </span>
+            <button
+              type="button"
+              :class="[
+                'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium transition-colors',
+                modalStep === 2
+                  ? 'bg-anito-black text-white'
+                  : rectifications.length
+                    ? 'bg-anito-gray-light text-anito-black hover:bg-anito-gray-light/80'
+                    : 'bg-anito-gray-light/50 text-anito-gray cursor-default',
+              ]"
+              :disabled="rectifications.length === 0"
+              @click="goToStep2"
+            >
+              Step 2 — Review & submit ({{ rectifications.length }})
+            </button>
+          </div>
         </div>
-        <form class="p-6 space-y-4" @submit.prevent="submitRequest">
+
+        <!-- Step 1: Rectification form -->
+        <form
+          v-show="modalStep === 1"
+          class="p-6 space-y-4 shrink-0"
+          @submit.prevent="addRectification"
+        >
           <div>
             <label
               for="rectify-date"
@@ -154,13 +187,73 @@
             </button>
             <button
               type="submit"
-              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium disabled:opacity-50"
-              :disabled="submitting"
+              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
             >
-              {{ submitting ? "Submitting…" : "Submit Request" }}
+              Add to list
+            </button>
+            <button
+              v-if="rectifications.length > 0"
+              type="button"
+              class="border border-anito-blue-mid text-anito-blue-mid text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-light transition-colors duration-150 font-sans font-medium"
+              @click="modalStep = 2"
+            >
+              Review & submit ({{ rectifications.length }})
             </button>
           </div>
         </form>
+
+        <!-- Step 2: List of requests + Submit all -->
+        <div
+          v-show="modalStep === 2"
+          class="p-6 flex flex-col min-h-0 flex-1 overflow-hidden"
+        >
+          <p class="text-anito-gray text-sm font-sans font-light mb-4">
+            Review your rectification requests below, then submit all.
+          </p>
+          <ul
+            class="space-y-2 overflow-y-auto flex-1 min-h-0 border border-anito-gray-light rounded px-3 py-2"
+          >
+            <li
+              v-for="rect in rectifications"
+              :key="rect.id"
+              class="flex items-start justify-between gap-3 py-2 border-b border-anito-gray-light last:border-0 last:pb-0"
+            >
+              <div class="min-w-0 text-sm font-sans text-anito-black">
+                <span class="font-medium">{{ formatDate(rect.date) }}</span>
+                — {{ rect.nature === "time_in" ? "Missed Logged-In" : "Missed Logged-Out" }}
+                · {{ rect.rectifiedTime }}
+                <p class="text-anito-gray text-xs mt-0.5 truncate" :title="rect.reason">
+                  {{ rect.reason }}
+                </p>
+              </div>
+              <button
+                type="button"
+                class="shrink-0 text-anito-gray hover:text-red-600 transition-colors p-1"
+                aria-label="Remove"
+                @click="removeRectification(rectifications.indexOf(rect))"
+              >
+                ✕
+              </button>
+            </li>
+          </ul>
+          <div class="flex gap-2 pt-4 border-t border-anito-gray-light mt-4 shrink-0">
+            <button
+              type="button"
+              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              @click="modalStep = 1"
+            >
+              Back — Add more
+            </button>
+            <button
+              type="button"
+              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium disabled:opacity-50"
+              :disabled="submitting"
+              @click="submitAllRequests"
+            >
+              {{ submitting ? "Submitting…" : `Submit all (${rectifications.length})` }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -171,22 +264,15 @@
       >
         Your Previous Requests
       </h2>
-      <div v-if="loading" class="p-8 space-y-2">
-        <div
-          class="h-0.5 w-full bg-anito-gray-light rounded-full overflow-hidden"
-        >
-          <div
-            class="h-full bg-anito-blue-mid animate-pulse rounded-full transition-all duration-300"
-            style="width: 60%"
-          ></div>
-        </div>
+      <div v-if="loading" class="p-8">
+        <LoadingBar />
       </div>
       <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
-      <div
-        v-else-if="!userRequests.length"
-        class="p-8 text-center text-anito-gray text-sm font-sans font-light"
-      >
-        No previous requests found.
+      <div v-else-if="!userRequests.length" class="p-8">
+        <EmptyState
+          title="No previous requests"
+          subtitle="No previous requests found."
+        />
       </div>
       <div v-else class="overflow-x-auto">
         <table class="w-full text-sm text-left">
@@ -244,15 +330,21 @@
 import { ref, reactive, onMounted } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
+import { useFormatters } from "@/composables/useFormatters.js";
+import LoadingBar from "@/components/ui/LoadingBar.vue";
+import EmptyState from "@/components/ui/EmptyState.vue";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
+const { formatDate, getStatusClass } = useFormatters();
 
 const showRectifyModal = ref(false);
+const modalStep = ref(1); // 1 = form, 2 = review list + submit
+const rectifications = ref([]); // list of { date, nature, reason, rectifiedTime }
 
 const form = reactive({
   date: "",
-  nature: "time_in", // 'time_in' | 'time_out' (FR1 / FR2)
+  nature: "time_in",
   reason: "",
   rectifiedTime: "",
 });
@@ -266,6 +358,8 @@ const submitError = ref("");
 const submitSuccess = ref("");
 
 function openRectifyModal() {
+  modalStep.value = 1;
+  rectifications.value = [];
   resetForm();
   submitError.value = "";
   submitSuccess.value = "";
@@ -274,7 +368,30 @@ function openRectifyModal() {
 
 function closeRectifyModal() {
   showRectifyModal.value = false;
+  modalStep.value = 1;
+  rectifications.value = [];
   resetForm();
+}
+
+function addRectification() {
+  if (!form.date || !form.reason?.trim() || !form.rectifiedTime) return;
+  rectifications.value.push({
+    id: `local-${Date.now()}-${rectifications.value.length}`,
+    date: form.date,
+    nature: form.nature,
+    reason: form.reason.trim(),
+    rectifiedTime: form.rectifiedTime,
+  });
+  form.reason = "";
+  form.rectifiedTime = "";
+}
+
+function removeRectification(index) {
+  rectifications.value.splice(index, 1);
+}
+
+function goToStep2() {
+  if (rectifications.value.length) modalStep.value = 2;
 }
 
 onMounted(async () => {
@@ -298,36 +415,47 @@ async function fetchUserRequests() {
   }
 }
 
-async function submitRequest() {
+async function submitAllRequests() {
+  if (rectifications.value.length === 0) return;
   submitting.value = true;
   submitError.value = "";
   submitSuccess.value = "";
 
-  const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
-  const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
-
-  const result = await rectificationsStore.createRequest({
-    userId: authStore.profile?.id,
-    attendanceId: null,
-    date: form.date,
-    reason: form.reason.trim(),
-    requestedIn: requestedIn || null,
-    requestedOut: requestedOut || null,
+  const promises = rectifications.value.map((rect) => {
+    const requestedIn = rect.nature === "time_in" ? rect.rectifiedTime : null;
+    const requestedOut = rect.nature === "time_out" ? rect.rectifiedTime : null;
+    return rectificationsStore.createRequest({
+      userId: authStore.profile?.id,
+      attendanceId: null,
+      date: rect.date,
+      reason: rect.reason,
+      requestedIn: requestedIn || null,
+      requestedOut: requestedOut || null,
+    });
   });
 
-  if (result.ok) {
-    submitSuccess.value =
-      "Your rectification request has been submitted successfully.";
-    closeRectifyModal();
-    await fetchUserRequests();
-    setTimeout(() => {
-      submitSuccess.value = "";
-    }, 5000);
-  } else {
-    submitError.value = result.error || "Failed to submit request";
+  try {
+    const results = await Promise.all(promises);
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length === 0) {
+      submitSuccess.value =
+        `Successfully submitted ${rectifications.value.length} rectification request(s).`;
+      closeRectifyModal();
+      await fetchUserRequests();
+      setTimeout(() => {
+        submitSuccess.value = "";
+      }, 5000);
+    } else {
+      submitError.value =
+        failed.length === results.length
+          ? failed[0].error || "Failed to submit requests"
+          : `${failed.length} of ${results.length} request(s) failed.`;
+    }
+  } catch (err) {
+    submitError.value = err?.message || "Failed to submit requests";
+  } finally {
+    submitting.value = false;
   }
-
-  submitting.value = false;
 }
 
 function resetForm() {
@@ -338,17 +466,4 @@ function resetForm() {
   rectificationsStore.clearSubmitStatus();
 }
 
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString();
-}
-
-function getStatusClass(status) {
-  const classes = {
-    pending: "bg-yellow-100 text-yellow-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-  };
-  return classes[status] || "bg-gray-100 text-gray-800";
-}
 </script>

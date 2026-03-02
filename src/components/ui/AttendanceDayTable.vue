@@ -34,6 +34,8 @@
 </template>
 
 <script setup>
+defineOptions({ inheritAttrs: false })
+
 defineProps({
   dayRows: { type: Array, default: () => [] },
   emptyText: { type: String, default: 'No records for this month.' },
@@ -45,11 +47,5 @@ function cellClass(value) {
   const hasValue = value != null && value !== ''
   if (hasValue) return `${base} text-anito-black`
   return `${base} text-anito-gray bg-anito-gray-light/50`
-}
-</script>
-
-<script>
-export default {
-  inheritAttrs: false,
 }
 </script>

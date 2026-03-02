@@ -28,7 +28,7 @@ export const useRectificationsStore = defineStore("rectifications", {
       try {
         const { data: rows, error } = await supabase
           .from("rectification_requests")
-          .select("*")
+          .select("id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at")
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -60,7 +60,9 @@ export const useRectificationsStore = defineStore("rectifications", {
         }));
       } catch (error) {
         this.error = error.message;
-        console.error("Error fetching rectification requests:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching rectification requests:", error);
+        }
       } finally {
         this.loading = false;
       }
@@ -93,7 +95,9 @@ export const useRectificationsStore = defineStore("rectifications", {
         return { ok: true, data };
       } catch (error) {
         this.submitError = error.message;
-        console.error("Error creating rectification request:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error creating rectification request:", error);
+        }
         return { ok: false, error: error.message };
       } finally {
         this.submitting = false;
@@ -129,7 +133,9 @@ export const useRectificationsStore = defineStore("rectifications", {
         return { ok: true, data };
       } catch (error) {
         this.error = error.message;
-        console.error("Error updating rectification request:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error updating rectification request:", error);
+        }
         return { ok: false, error: error.message };
       } finally {
         this.submitting = false;
@@ -145,7 +151,9 @@ export const useRectificationsStore = defineStore("rectifications", {
           .eq("id", rectificationRequest.user_id)
           .maybeSingle();
         if (!profile?.bio_id) {
-          console.warn("Rectification: profile has no bio_id, cannot update attendance_logs");
+          if (import.meta.env.DEV) {
+            console.warn("Rectification: profile has no bio_id, cannot update attendance_logs");
+          }
           return null;
         }
         const { data: staffRow } = await supabase
@@ -154,7 +162,9 @@ export const useRectificationsStore = defineStore("rectifications", {
           .eq("bio_id", profile.bio_id)
           .maybeSingle();
         if (!staffRow?.id) {
-          console.warn("Rectification: no staff for bio_id", profile.bio_id);
+          if (import.meta.env.DEV) {
+            console.warn("Rectification: no staff for bio_id", profile.bio_id);
+          }
           return null;
         }
         const staffId = staffRow.id;
@@ -212,7 +222,9 @@ export const useRectificationsStore = defineStore("rectifications", {
           .eq("id", rectificationRequest.id);
         return newRecord;
       } catch (error) {
-        console.error("Error updating attendance record:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error updating attendance record:", error);
+        }
         throw error;
       }
     },
@@ -224,7 +236,7 @@ export const useRectificationsStore = defineStore("rectifications", {
       try {
         const { data, error } = await supabase
           .from("rectification_requests")
-          .select("*")
+          .select("id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at")
           .eq("user_id", userId)
           .order("created_at", { ascending: false });
 
@@ -232,7 +244,9 @@ export const useRectificationsStore = defineStore("rectifications", {
         return data || [];
       } catch (error) {
         this.error = error.message;
-        console.error("Error fetching user rectification requests:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching user rectification requests:", error);
+        }
         return [];
       } finally {
         this.loading = false;
@@ -258,7 +272,7 @@ export const useRectificationsStore = defineStore("rectifications", {
 
         const { data: attendance, error: attendanceError } = await supabase
           .from("attendance_logs")
-          .select("*")
+          .select("id, staff_id, date, time_in, time_out, source")
           .eq("staff_id", staffId)
           .gte("date", startDate)
           .lte("date", endDate)
@@ -269,7 +283,7 @@ export const useRectificationsStore = defineStore("rectifications", {
         const { data: rectifications, error: rectificationError } =
           await supabase
             .from("rectification_requests")
-            .select("*")
+            .select("id, user_id, date, requested_in, requested_out, status")
             .eq("user_id", profileId)
             .eq("status", "approved")
             .gte("date", startDate)
@@ -315,12 +329,23 @@ export const useRectificationsStore = defineStore("rectifications", {
 
         return mergedRecords;
       } catch (error) {
-        console.error("Error fetching attendance with rectifications:", error);
+        if (import.meta.env.DEV) {
+          console.error("Error fetching attendance with rectifications:", error);
+        }
         throw error;
       }
     },
 
     clearSubmitStatus() {
+      this.submitError = null;
+      this.submitSuccess = null;
+    },
+
+    $reset() {
+      this.requests = [];
+      this.loading = false;
+      this.error = null;
+      this.submitting = false;
       this.submitError = null;
       this.submitSuccess = null;
     },
