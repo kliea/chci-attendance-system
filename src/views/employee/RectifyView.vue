@@ -45,12 +45,18 @@
       <div
         class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden max-h-[90vh] flex flex-col"
       >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white shrink-0">
+        <div
+          class="px-6 py-4 border-b border-anito-gray-light bg-white shrink-0"
+        >
           <div class="flex items-center justify-between">
             <h2
               class="font-display font-light text-lg tracking-wide text-anito-black"
             >
-              DTR Rectification Request
+              {{
+                editingRequest
+                  ? "Edit DTR Rectification Request"
+                  : "DTR Rectification Request Form"
+              }}
             </h2>
             <button
               type="button"
@@ -94,7 +100,9 @@
         <form
           v-show="modalStep === 1"
           class="p-6 space-y-4 shrink-0"
-          @submit.prevent="addRectification"
+          @submit.prevent="
+            editingRequest ? submitEditRequest() : addRectification()
+          "
         >
           <div>
             <label
@@ -189,10 +197,10 @@
               type="submit"
               class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
             >
-              Add to list
+              {{ editingRequest ? "Update Request" : "Add to list" }}
             </button>
             <button
-              v-if="rectifications.length > 0"
+              v-if="!editingRequest && rectifications.length > 0"
               type="button"
               class="border border-anito-blue-mid text-anito-blue-mid text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-light transition-colors duration-150 font-sans font-medium"
               @click="modalStep = 2"
@@ -220,9 +228,17 @@
             >
               <div class="min-w-0 text-sm font-sans text-anito-black">
                 <span class="font-medium">{{ formatDate(rect.date) }}</span>
-                — {{ rect.nature === "time_in" ? "Missed Logged-In" : "Missed Logged-Out" }}
+                —
+                {{
+                  rect.nature === "time_in"
+                    ? "Missed Logged-In"
+                    : "Missed Logged-Out"
+                }}
                 · {{ rect.rectifiedTime }}
-                <p class="text-anito-gray text-xs mt-0.5 truncate" :title="rect.reason">
+                <p
+                  class="text-anito-gray text-xs mt-0.5 truncate"
+                  :title="rect.reason"
+                >
                   {{ rect.reason }}
                 </p>
               </div>
@@ -236,7 +252,9 @@
               </button>
             </li>
           </ul>
-          <div class="flex gap-2 pt-4 border-t border-anito-gray-light mt-4 shrink-0">
+          <div
+            class="flex gap-2 pt-4 border-t border-anito-gray-light mt-4 shrink-0"
+          >
             <button
               type="button"
               class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
@@ -250,7 +268,11 @@
               :disabled="submitting"
               @click="submitAllRequests"
             >
-              {{ submitting ? "Submitting…" : `Submit all (${rectifications.length})` }}
+              {{
+                submitting
+                  ? "Submitting…"
+                  : `Submit all (${rectifications.length})`
+              }}
             </button>
           </div>
         </div>
@@ -293,6 +315,11 @@
               >
                 Status
               </th>
+              <th
+                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-center"
+              >
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -318,11 +345,111 @@
                   {{ request.status }}
                 </span>
               </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2 justify-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-anito-black hover:bg-anito-gray-light rounded transition-all duration-150 disabled:text-anito-gray disabled:cursor-not-allowed"
+                    @click="editRequest(request)"
+                    :disabled="request.status !== 'pending'"
+                  >
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      ></path>
+                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-anito-black hover:bg-anito-gray-light rounded transition-all duration-150 disabled:text-anito-gray disabled:cursor-not-allowed"
+                    @click="openDeleteModal(request)"
+                    :disabled="request.status !== 'pending'"
+                  >
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      ></path>
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteModal"
+      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      @click.self="closeDeleteModal"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-anito-gray-light overflow-hidden"
+      >
+        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+          <div class="flex items-center justify-between">
+            <h2
+              class="font-display font-light text-lg tracking-wide text-anito-black"
+            >
+              Confirm Delete
+            </h2>
+            <button
+              type="button"
+              class="text-anito-gray hover:text-anito-black transition-colors"
+              aria-label="Close"
+              @click="closeDeleteModal"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm font-sans text-anito-black mb-4">
+            Are you sure you want to delete this rectification request?
+          </p>
+          <p class="text-xs font-sans text-anito-gray mb-6">
+            This action cannot be undone.
+          </p>
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              @click="closeDeleteModal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-gray transition-colors duration-150 font-sans font-medium"
+              :disabled="deleting"
+              @click="confirmDelete"
+            >
+              {{ deleting ? "Deleting…" : "Delete" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -356,6 +483,10 @@ const error = ref("");
 const submitting = ref(false);
 const submitError = ref("");
 const submitSuccess = ref("");
+const editingRequest = ref(null);
+const showDeleteModal = ref(false);
+const deletingRequest = ref(null);
+const deleting = ref(false);
 
 function openRectifyModal() {
   modalStep.value = 1;
@@ -368,8 +499,7 @@ function openRectifyModal() {
 
 function closeRectifyModal() {
   showRectifyModal.value = false;
-  modalStep.value = 1;
-  rectifications.value = [];
+  editingRequest.value = null;
   resetForm();
 }
 
@@ -415,8 +545,96 @@ async function fetchUserRequests() {
   }
 }
 
+function resetForm() {
+  form.date = "";
+  form.nature = "time_in";
+  form.reason = "";
+  form.rectifiedTime = "";
+  rectificationsStore.clearSubmitStatus();
+}
+
+async function submitEditRequest() {
+  if (!editingRequest.value) return;
+
+  submitting.value = true;
+  submitError.value = "";
+  submitSuccess.value = "";
+
+  const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
+  const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
+
+  const requestData = {
+    userId: authStore.profile?.id,
+    attendanceId: null,
+    date: form.date,
+    reason: form.reason.trim(),
+    requestedIn: requestedIn || null,
+    requestedOut: requestedOut || null,
+  };
+
+  const result = await rectificationsStore.updateRequest(
+    editingRequest.value.id,
+    requestData,
+  );
+
+  if (result.ok) {
+    submitSuccess.value =
+      "Your rectification request has been updated successfully.";
+    closeRectifyModal();
+    await fetchUserRequests();
+    setTimeout(() => {
+      submitSuccess.value = "";
+    }, 5000);
+  } else {
+    submitError.value = result.error || "Failed to update request";
+  }
+
+  submitting.value = false;
+}
+
 async function submitAllRequests() {
+  // Handle edit case - direct submission of single edited request
+  if (editingRequest.value) {
+    submitting.value = true;
+    submitError.value = "";
+    submitSuccess.value = "";
+
+    const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
+    const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
+
+    const requestData = {
+      userId: authStore.profile?.id,
+      attendanceId: null,
+      date: form.date,
+      reason: form.reason.trim(),
+      requestedIn: requestedIn || null,
+      requestedOut: requestedOut || null,
+    };
+
+    const result = await rectificationsStore.updateRequest(
+      editingRequest.value.id,
+      requestData,
+    );
+
+    if (result.ok) {
+      submitSuccess.value =
+        "Your rectification request has been updated successfully.";
+      closeRectifyModal();
+      await fetchUserRequests();
+      setTimeout(() => {
+        submitSuccess.value = "";
+      }, 5000);
+    } else {
+      submitError.value = result.error || "Failed to update request";
+    }
+
+    submitting.value = false;
+    return;
+  }
+
+  // Handle create case - multiple rectifications
   if (rectifications.value.length === 0) return;
+
   submitting.value = true;
   submitError.value = "";
   submitSuccess.value = "";
@@ -424,6 +642,7 @@ async function submitAllRequests() {
   const promises = rectifications.value.map((rect) => {
     const requestedIn = rect.nature === "time_in" ? rect.rectifiedTime : null;
     const requestedOut = rect.nature === "time_out" ? rect.rectifiedTime : null;
+
     return rectificationsStore.createRequest({
       userId: authStore.profile?.id,
       attendanceId: null,
@@ -434,36 +653,76 @@ async function submitAllRequests() {
     });
   });
 
+  const results = await Promise.all(promises);
+
+  // Check if all were successful
+  const allSuccessful = results.every((result) => result.ok);
+
+  if (allSuccessful) {
+    submitSuccess.value = `Successfully submitted ${rectifications.value.length} rectification request(s).`;
+    closeRectifyModal();
+    await fetchUserRequests();
+    setTimeout(() => {
+      submitSuccess.value = "";
+    }, 5000);
+  } else {
+    const failedCount = results.filter((result) => !result.ok).length;
+    submitError.value = `Failed to submit ${failedCount} request(s). Please try again.`;
+  }
+
+  submitting.value = false;
+}
+
+function editRequest(request) {
+  if (request.status !== "pending") return;
+
+  editingRequest.value = request;
+  form.date = request.date;
+  form.reason = request.reason;
+  form.nature = request.requestedIn ? "time_in" : "time_out";
+  form.rectifiedTime = request.requestedIn || request.requestedOut || "";
+
+  // For editing, skip the multi-step flow and go directly to single submit mode
+  modalStep.value = 1;
+  rectifications.value = []; // Clear any existing rectifications
+  showRectifyModal.value = true;
+}
+
+function openDeleteModal(request) {
+  if (request.status !== "pending") return;
+
+  deletingRequest.value = request;
+  showDeleteModal.value = true;
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false;
+  deletingRequest.value = null;
+}
+
+async function confirmDelete() {
+  if (!deletingRequest.value) return;
+
+  deleting.value = true;
+
   try {
-    const results = await Promise.all(promises);
-    const failed = results.filter((r) => !r.ok);
-    if (failed.length === 0) {
-      submitSuccess.value =
-        `Successfully submitted ${rectifications.value.length} rectification request(s).`;
-      closeRectifyModal();
+    const result = await rectificationsStore.deleteRequest(
+      deletingRequest.value.id,
+    );
+    if (result.ok) {
+      submitSuccess.value = "Request deleted successfully.";
+      closeDeleteModal();
       await fetchUserRequests();
       setTimeout(() => {
         submitSuccess.value = "";
-      }, 5000);
+      }, 3000);
     } else {
-      submitError.value =
-        failed.length === results.length
-          ? failed[0].error || "Failed to submit requests"
-          : `${failed.length} of ${results.length} request(s) failed.`;
+      submitError.value = result.error || "Failed to delete request";
     }
-  } catch (err) {
-    submitError.value = err?.message || "Failed to submit requests";
+  } catch (error) {
+    submitError.value = "An error occurred while deleting the request.";
   } finally {
-    submitting.value = false;
+    deleting.value = false;
   }
 }
-
-function resetForm() {
-  form.date = "";
-  form.nature = "time_in";
-  form.reason = "";
-  form.rectifiedTime = "";
-  rectificationsStore.clearSubmitStatus();
-}
-
 </script>
