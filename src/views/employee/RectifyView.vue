@@ -45,7 +45,9 @@
       <div
         class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden max-h-[90vh] flex flex-col"
       >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white shrink-0">
+        <div
+          class="px-6 py-4 border-b border-anito-gray-light bg-white shrink-0"
+        >
           <div class="flex items-center justify-between">
             <h2
               class="font-display font-light text-lg tracking-wide text-anito-black"
@@ -98,7 +100,9 @@
         <form
           v-show="modalStep === 1"
           class="p-6 space-y-4 shrink-0"
-          @submit.prevent="addRectification"
+          @submit.prevent="
+            editingRequest ? submitEditRequest() : addRectification()
+          "
         >
           <div>
             <label
@@ -193,10 +197,10 @@
               type="submit"
               class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
             >
-              Add to list
+              {{ editingRequest ? "Update Request" : "Add to list" }}
             </button>
             <button
-              v-if="rectifications.length > 0"
+              v-if="!editingRequest && rectifications.length > 0"
               type="button"
               class="border border-anito-blue-mid text-anito-blue-mid text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-light transition-colors duration-150 font-sans font-medium"
               @click="modalStep = 2"
@@ -224,9 +228,17 @@
             >
               <div class="min-w-0 text-sm font-sans text-anito-black">
                 <span class="font-medium">{{ formatDate(rect.date) }}</span>
-                — {{ rect.nature === "time_in" ? "Missed Logged-In" : "Missed Logged-Out" }}
+                —
+                {{
+                  rect.nature === "time_in"
+                    ? "Missed Logged-In"
+                    : "Missed Logged-Out"
+                }}
                 · {{ rect.rectifiedTime }}
-                <p class="text-anito-gray text-xs mt-0.5 truncate" :title="rect.reason">
+                <p
+                  class="text-anito-gray text-xs mt-0.5 truncate"
+                  :title="rect.reason"
+                >
                   {{ rect.reason }}
                 </p>
               </div>
@@ -240,7 +252,9 @@
               </button>
             </li>
           </ul>
-          <div class="flex gap-2 pt-4 border-t border-anito-gray-light mt-4 shrink-0">
+          <div
+            class="flex gap-2 pt-4 border-t border-anito-gray-light mt-4 shrink-0"
+          >
             <button
               type="button"
               class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
@@ -254,7 +268,11 @@
               :disabled="submitting"
               @click="submitAllRequests"
             >
-              {{ submitting ? "Submitting…" : `Submit all (${rectifications.length})` }}
+              {{
+                submitting
+                  ? "Submitting…"
+                  : `Submit all (${rectifications.length})`
+              }}
             </button>
           </div>
         </div>
@@ -527,8 +545,17 @@ async function fetchUserRequests() {
   }
 }
 
-async function submitAllRequests() {
-  if (rectifications.value.length === 0) return;
+function resetForm() {
+  form.date = "";
+  form.nature = "time_in";
+  form.reason = "";
+  form.rectifiedTime = "";
+  rectificationsStore.clearSubmitStatus();
+}
+
+async function submitEditRequest() {
+  if (!editingRequest.value) return;
+
   submitting.value = true;
   submitError.value = "";
   submitSuccess.value = "";
@@ -545,59 +572,105 @@ async function submitAllRequests() {
     requestedOut: requestedOut || null,
   };
 
-  let result;
-
-  if (editingRequest.value) {
-    // Update existing request
-    result = await rectificationsStore.updateRequest(
-      editingRequest.value.id,
-      requestData,
-    );
-  } else {
-    // Create new request
-    result = await rectificationsStore.createRequest(requestData);
-  }
+  const result = await rectificationsStore.updateRequest(
+    editingRequest.value.id,
+    requestData,
+  );
 
   if (result.ok) {
-    submitSuccess.value = editingRequest.value
-      ? "Your rectification request has been updated successfully."
-      : "Your rectification request has been submitted successfully.";
+    submitSuccess.value =
+      "Your rectification request has been updated successfully.";
     closeRectifyModal();
     await fetchUserRequests();
     setTimeout(() => {
       submitSuccess.value = "";
     }, 5000);
   } else {
-    submitError.value =
-      result.error ||
-      (editingRequest.value
-        ? "Failed to update request"
-        : "Failed to submit request");
+    submitError.value = result.error || "Failed to update request";
   }
 
   submitting.value = false;
 }
 
-function resetForm() {
-  form.date = "";
-  form.nature = "time_in";
-  form.reason = "";
-  form.rectifiedTime = "";
-  rectificationsStore.clearSubmitStatus();
-}
+async function submitAllRequests() {
+  // Handle edit case - direct submission of single edited request
+  if (editingRequest.value) {
+    submitting.value = true;
+    submitError.value = "";
+    submitSuccess.value = "";
 
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString();
-}
+    const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
+    const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
 
-function getStatusClass(status) {
-  const classes = {
-    pending: "border border-anito-black text-anito-black",
-    approved: "bg-anito-black text-white",
-    rejected: "border border-anito-gray text-anito-gray",
-  };
-  return classes[status] || "border border-anito-gray text-anito-gray";
+    const requestData = {
+      userId: authStore.profile?.id,
+      attendanceId: null,
+      date: form.date,
+      reason: form.reason.trim(),
+      requestedIn: requestedIn || null,
+      requestedOut: requestedOut || null,
+    };
+
+    const result = await rectificationsStore.updateRequest(
+      editingRequest.value.id,
+      requestData,
+    );
+
+    if (result.ok) {
+      submitSuccess.value =
+        "Your rectification request has been updated successfully.";
+      closeRectifyModal();
+      await fetchUserRequests();
+      setTimeout(() => {
+        submitSuccess.value = "";
+      }, 5000);
+    } else {
+      submitError.value = result.error || "Failed to update request";
+    }
+
+    submitting.value = false;
+    return;
+  }
+
+  // Handle create case - multiple rectifications
+  if (rectifications.value.length === 0) return;
+
+  submitting.value = true;
+  submitError.value = "";
+  submitSuccess.value = "";
+
+  const promises = rectifications.value.map((rect) => {
+    const requestedIn = rect.nature === "time_in" ? rect.rectifiedTime : null;
+    const requestedOut = rect.nature === "time_out" ? rect.rectifiedTime : null;
+
+    return rectificationsStore.createRequest({
+      userId: authStore.profile?.id,
+      attendanceId: null,
+      date: rect.date,
+      reason: rect.reason,
+      requestedIn: requestedIn || null,
+      requestedOut: requestedOut || null,
+    });
+  });
+
+  const results = await Promise.all(promises);
+
+  // Check if all were successful
+  const allSuccessful = results.every((result) => result.ok);
+
+  if (allSuccessful) {
+    submitSuccess.value = `Successfully submitted ${rectifications.value.length} rectification request(s).`;
+    closeRectifyModal();
+    await fetchUserRequests();
+    setTimeout(() => {
+      submitSuccess.value = "";
+    }, 5000);
+  } else {
+    const failedCount = results.filter((result) => !result.ok).length;
+    submitError.value = `Failed to submit ${failedCount} request(s). Please try again.`;
+  }
+
+  submitting.value = false;
 }
 
 function editRequest(request) {
@@ -609,6 +682,9 @@ function editRequest(request) {
   form.nature = request.requestedIn ? "time_in" : "time_out";
   form.rectifiedTime = request.requestedIn || request.requestedOut || "";
 
+  // For editing, skip the multi-step flow and go directly to single submit mode
+  modalStep.value = 1;
+  rectifications.value = []; // Clear any existing rectifications
   showRectifyModal.value = true;
 }
 

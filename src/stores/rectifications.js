@@ -28,7 +28,9 @@ export const useRectificationsStore = defineStore("rectifications", {
       try {
         const { data: rows, error } = await supabase
           .from("rectification_requests")
-          .select("id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at")
+          .select(
+            "id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at",
+          )
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -104,6 +106,40 @@ export const useRectificationsStore = defineStore("rectifications", {
       }
     },
 
+    async updateRequest(requestId, requestData) {
+      this.submitting = true;
+      this.submitError = null;
+      this.submitSuccess = null;
+
+      try {
+        const { data, error } = await supabase
+          .from("rectification_requests")
+          .update({
+            date: requestData.date,
+            reason: requestData.reason,
+            requested_in: requestData.requestedIn || null,
+            requested_out: requestData.requestedOut || null,
+          })
+          .eq("id", requestId)
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        this.submitSuccess = "Rectification request updated successfully";
+        await this.fetchRequests();
+        return { ok: true, data };
+      } catch (error) {
+        this.submitError = error.message;
+        if (import.meta.env.DEV) {
+          console.error("Error updating rectification request:", error);
+        }
+        return { ok: false, error: error.message };
+      } finally {
+        this.submitting = false;
+      }
+    },
+
     async updateRequestStatus(requestId, status, reviewedBy) {
       this.submitting = true;
       this.error = null;
@@ -152,7 +188,9 @@ export const useRectificationsStore = defineStore("rectifications", {
           .maybeSingle();
         if (!profile?.bio_id) {
           if (import.meta.env.DEV) {
-            console.warn("Rectification: profile has no bio_id, cannot update attendance_logs");
+            console.warn(
+              "Rectification: profile has no bio_id, cannot update attendance_logs",
+            );
           }
           return null;
         }
@@ -179,8 +217,10 @@ export const useRectificationsStore = defineStore("rectifications", {
         if (fetchError) throw fetchError;
 
         const updatePayload = {};
-        if (rectificationRequest.requested_in != null) updatePayload.time_in = rectificationRequest.requested_in;
-        if (rectificationRequest.requested_out != null) updatePayload.time_out = rectificationRequest.requested_out;
+        if (rectificationRequest.requested_in != null)
+          updatePayload.time_in = rectificationRequest.requested_in;
+        if (rectificationRequest.requested_out != null)
+          updatePayload.time_out = rectificationRequest.requested_out;
 
         if (existingRecord) {
           if (Object.keys(updatePayload).length) {
@@ -236,7 +276,9 @@ export const useRectificationsStore = defineStore("rectifications", {
       try {
         const { data, error } = await supabase
           .from("rectification_requests")
-          .select("id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at")
+          .select(
+            "id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at",
+          )
           .eq("user_id", userId)
           .order("created_at", { ascending: false });
 
@@ -330,9 +372,39 @@ export const useRectificationsStore = defineStore("rectifications", {
         return mergedRecords;
       } catch (error) {
         if (import.meta.env.DEV) {
-          console.error("Error fetching attendance with rectifications:", error);
+          console.error(
+            "Error fetching attendance with rectifications:",
+            error,
+          );
         }
         throw error;
+      }
+    },
+
+    async deleteRequest(requestId) {
+      this.submitting = true;
+      this.submitError = null;
+      this.submitSuccess = null;
+
+      try {
+        const { error } = await supabase
+          .from("rectification_requests")
+          .delete()
+          .eq("id", requestId);
+
+        if (error) throw error;
+
+        this.submitSuccess = "Rectification request deleted successfully";
+        await this.fetchRequests();
+        return { ok: true };
+      } catch (error) {
+        this.submitError = error.message;
+        if (import.meta.env.DEV) {
+          console.error("Error deleting rectification request:", error);
+        }
+        return { ok: false, error: error.message };
+      } finally {
+        this.submitting = false;
       }
     },
 
