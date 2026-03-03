@@ -1,3 +1,4 @@
+<!-- TODO: wire to router -->
 <template>
   <div class="max-w-4xl">
     <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -181,7 +182,7 @@
           <div class="flex gap-2 pt-2 border-t border-anito-gray-light pt-4">
             <button
               type="button"
-              class="inline-flex items-center gap-2 px-6 py-3 border border-anito-gray-light text-anito-black text-[11px] tracking-[0.2em] uppercase font-semibold rounded-xl hover:border-anito-black hover:bg-anito-gray-light/50 transition-all duration-150 shadow-sm"
+              class="inline-flex items-center gap-2 px-6 py-3 border border-anito-gray-light text-anito-black text-[11px] tracking-[0.2em] uppercase font-medium rounded hover:border-anito-black hover:bg-anito-gray-light/50 transition-all duration-150 shadow-sm"
               @click="closeRectifyModal"
             >
               <svg
@@ -201,7 +202,7 @@
             </button>
             <button
               type="submit"
-              class="inline-flex items-center gap-2 bg-anito-blue-mid text-white text-[11px] tracking-[0.2em] uppercase font-semibold px-6 py-3 rounded-xl hover:bg-anito-blue-deep transition-all duration-150 shadow-sm"
+              class="inline-flex items-center gap-2 bg-anito-blue-mid text-white text-[11px] tracking-[0.2em] uppercase font-medium px-6 py-3 rounded hover:bg-anito-blue-deep transition-all duration-150 shadow-sm"
             >
               <svg
                 class="w-4 h-4"
@@ -223,38 +224,15 @@
 
         <!-- Review Tab -->
         <div v-else-if="activeTab === 'review'" class="p-4">
-          <div
+          <EmptyState
             v-if="rectifications.length === 0"
-            class="text-center text-anito-gray text-sm font-sans font-light py-8"
-          >
-            <div
-              class="w-12 h-12 bg-anito-gray-light/20 rounded-full flex items-center justify-center mx-auto mb-3"
-            >
-              <svg
-                class="w-6 h-6 text-anito-gray"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                ></path>
-              </svg>
-            </div>
-            <p class="text-anito-gray font-medium text-sm">
-              No rectifications added yet
-            </p>
-            <p class="text-anito-gray text-xs mt-1">
-              Add your first rectification to get started
-            </p>
-          </div>
+            title="No rectifications added yet"
+            subtitle="Add your first rectification to get started"
+          />
 
           <div v-else class="space-y-4">
             <div class="flex items-center justify-between">
-              <h3 class="text-sm font-semibold text-anito-black">
+              <h3 class="text-sm font-display font-light text-anito-black">
                 Review Rectifications
               </h3>
               <div
@@ -290,27 +268,27 @@
                 >
                   <tr>
                     <th
-                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                      class="text-left px-4 py-2.5 text-[10px] font-display font-light text-anito-black uppercase tracking-[0.15em]"
                     >
                       Date
                     </th>
                     <th
-                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                      class="text-left px-4 py-2.5 text-[10px] font-display font-light text-anito-black uppercase tracking-[0.15em]"
                     >
                       Type
                     </th>
                     <th
-                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                      class="text-left px-4 py-2.5 text-[10px] font-display font-light text-anito-black uppercase tracking-[0.15em]"
                     >
                       Time
                     </th>
                     <th
-                      class="text-left px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                      class="text-left px-4 py-2.5 text-[10px] font-display font-light text-anito-black uppercase tracking-[0.15em]"
                     >
                       Reason
                     </th>
                     <th
-                      class="text-center px-4 py-2.5 text-[10px] font-semibold text-anito-black uppercase tracking-[0.15em]"
+                      class="text-center px-4 py-2.5 text-[10px] font-display font-light text-anito-black uppercase tracking-[0.15em]"
                     >
                       Actions
                     </th>
@@ -318,8 +296,8 @@
                 </thead>
                 <tbody class="divide-y divide-anito-blue-mid/10">
                   <tr
-                    v-for="(rect, index) in rectifications"
-                    :key="index"
+                    v-for="rect in rectifications"
+                    :key="rect.id"
                     class="bg-white hover:bg-anito-blue-mid/5 transition-colors duration-150"
                   >
                     <td
@@ -329,7 +307,7 @@
                     </td>
                     <td class="px-4 py-2.5">
                       <span
-                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                        class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
                         :class="
                           rect.nature === 'time_in'
                             ? 'bg-green-100 text-green-800'
@@ -375,7 +353,7 @@
                       <button
                         type="button"
                         class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-all duration-150"
-                        @click="removeRectification(index)"
+                        @click="removeRectification(rectifications.indexOf(rect))"
                       >
                         <svg
                           class="w-2.5 h-2.5"
@@ -402,7 +380,7 @@
             <div class="flex gap-2 pt-1">
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 px-4 py-2 border border-anito-gray-light text-anito-black text-[10px] tracking-[0.15em] uppercase font-semibold rounded-lg hover:border-anito-black hover:bg-anito-gray-light/50 transition-all duration-150 shadow-sm"
+                class="inline-flex items-center gap-1.5 px-4 py-2 border border-anito-gray-light text-anito-black text-[10px] tracking-[0.15em] uppercase font-medium rounded-lg hover:border-anito-black hover:bg-anito-gray-light/50 transition-all duration-150 shadow-sm"
                 @click="activeTab = 'request'"
               >
                 <svg
@@ -422,7 +400,7 @@
               </button>
               <button
                 type="button"
-                class="inline-flex items-center gap-1.5 px-4 py-2 bg-anito-black text-white text-[10px] tracking-[0.15em] uppercase font-semibold rounded-lg hover:bg-anito-blue-deep transition-all duration-150 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                class="inline-flex items-center gap-1.5 px-4 py-2 bg-anito-black text-white text-[10px] tracking-[0.15em] uppercase font-medium rounded-lg hover:bg-anito-blue-deep transition-all duration-150 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="submitting"
                 @click="submitAllRequests"
               >
@@ -476,9 +454,12 @@
 import { ref, reactive } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
+import { useFormatters } from "@/composables/useFormatters.js";
+import EmptyState from "@/components/ui/EmptyState.vue";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
+const { formatDate } = useFormatters();
 
 const showRectifyModal = ref(false);
 const activeTab = ref("request"); // 'request' | 'review'
@@ -519,6 +500,7 @@ function addRectification() {
 
   // Add to rectifications array
   rectifications.value.push({
+    id: `local-${Date.now()}-${rectifications.value.length}`,
     date: form.date,
     nature: form.nature,
     reason: form.reason.trim(),
@@ -588,8 +570,4 @@ function resetForm() {
   rectificationsStore.clearSubmitStatus();
 }
 
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString();
-}
 </script>

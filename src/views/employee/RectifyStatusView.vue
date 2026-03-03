@@ -1,3 +1,4 @@
+<!-- TODO: wire to router -->
 <template>
   <div class="max-w-4xl">
     <header class="mb-6">
@@ -22,15 +23,8 @@
       >
         Your Previous Requests
       </h2>
-      <div v-if="loading" class="p-8 space-y-2">
-        <div
-          class="h-0.5 w-full bg-anito-gray-light rounded-full overflow-hidden"
-        >
-          <div
-            class="h-full bg-anito-blue-mid animate-pulse rounded-full transition-all duration-300"
-            style="width: 60%"
-          ></div>
-        </div>
+      <div v-if="loading" class="p-8">
+        <LoadingBar />
       </div>
       <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
       <div
@@ -95,9 +89,12 @@
 import { ref, onMounted } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
+import { useFormatters } from "@/composables/useFormatters.js";
+import LoadingBar from "@/components/ui/LoadingBar.vue";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
+const { formatDate, getStatusClass } = useFormatters();
 
 const userRequests = ref([]);
 const loading = ref(false);
@@ -124,17 +121,4 @@ async function fetchUserRequests() {
   }
 }
 
-function formatDate(dateString) {
-  if (!dateString) return "—";
-  return new Date(dateString).toLocaleDateString();
-}
-
-function getStatusClass(status) {
-  const classes = {
-    pending: "bg-yellow-100 text-yellow-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
-  };
-  return classes[status] || "bg-gray-100 text-gray-800";
-}
 </script>

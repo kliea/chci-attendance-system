@@ -70,6 +70,11 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/:pathMatch(.*)*",
+    name: "not-found",
+    component: () => import("@/views/NotFoundView.vue"),
+  },
 ];
 
 const router = createRouter({
@@ -82,8 +87,10 @@ router.beforeEach(async (to, _from, next) => {
 
   // Simple timeout protection
   const timeout = setTimeout(() => {
-    console.warn("Router timeout - proceeding");
-    next();
+    if (import.meta.env.DEV) {
+      console.warn("Router timeout - proceeding");
+    }
+    next({ name: "login" });
   }, 2000);
 
   try {
@@ -91,7 +98,9 @@ router.beforeEach(async (to, _from, next) => {
       await auth.init();
     }
   } catch (err) {
-    console.error("Router auth error:", err);
+    if (import.meta.env.DEV) {
+      console.error("Router auth error:", err);
+    }
   } finally {
     clearTimeout(timeout);
   }

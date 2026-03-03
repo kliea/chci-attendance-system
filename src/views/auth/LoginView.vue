@@ -91,13 +91,19 @@ async function handleSubmit() {
     const { ok } = await auth.signIn(email.value, password.value);
 
     if (ok) {
-      const redirect =
-        route.query.redirect ??
-        (auth.isManager ? "/dashboard" : "/my-attendance");
-      router.push(redirect);
+      const redirect = route.query.redirect;
+      if (redirect) {
+        router.push({ path: redirect });
+      } else if (auth.isManager) {
+        router.push({ name: "dashboard" });
+      } else {
+        router.push({ name: "my-attendance" });
+      }
     }
   } catch (err) {
-    console.error("Login submit error:", err);
+    if (import.meta.env.DEV) {
+      console.error("Login submit error:", err);
+    }
   } finally {
     loading.value = false;
   }

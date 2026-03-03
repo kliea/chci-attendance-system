@@ -60,6 +60,15 @@ export const useStaffStore = defineStore('staff', () => {
   }
 
   /**
+   * Fetch unregistered staff (no linked profile). Used by RegisterView.
+   */
+  async function fetchUnregisteredStaff() {
+    const { data, error } = await supabase.rpc('get_unregistered_staff')
+    if (error) throw error
+    return data ?? []
+  }
+
+  /**
    * Delete a staff row. Fails if a profile is linked (bio_id FK). Attendance logs cascade-delete.
    */
   async function deleteStaff(id) {
@@ -80,6 +89,7 @@ export const useStaffStore = defineStore('staff', () => {
     loading,
     error,
     fetchStaff,
+    fetchUnregisteredStaff,
     addFromList,
     updateStaff,
     deleteStaff,

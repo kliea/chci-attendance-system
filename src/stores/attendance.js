@@ -45,9 +45,11 @@ export const useAttendanceStore = defineStore('attendance', () => {
     if (opts.forCurrentUserOnly) {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.id) {
-        const { data: profile } = await supabase.from('profiles').select('bio_id').eq('id', user.id).maybeSingle()
+        const { data: profile, error: profileError } = await supabase.from('profiles').select('bio_id').eq('id', user.id).maybeSingle()
+        if (profileError) throw profileError
         if (profile?.bio_id) {
-          const { data: staffRow } = await supabase.from('staff').select('id').eq('bio_id', profile.bio_id).maybeSingle()
+          const { data: staffRow, error: staffError } = await supabase.from('staff').select('id').eq('bio_id', profile.bio_id).maybeSingle()
+          if (staffError) throw staffError
           if (staffRow?.id) query = query.eq('staff_id', staffRow.id)
           // Employees need RLS "Users can select own staff row" on staff so this lookup and the attendance_logs→staff join succeed.
         }

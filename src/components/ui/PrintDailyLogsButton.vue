@@ -63,7 +63,9 @@ async function handlePrint() {
     a.click()
     setTimeout(() => URL.revokeObjectURL(blobUrl), 5000)
   } catch (err) {
-    console.error('Print daily logs (PDF) failed:', err)
+    if (import.meta.env.DEV) {
+      console.error('Print daily logs (PDF) failed:', err)
+    }
   } finally {
     loading.value = false
   }
