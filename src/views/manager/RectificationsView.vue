@@ -155,7 +155,7 @@
       <h2
         class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white"
       >
-        Pending Requests ({{ pendingCount }})
+        Pending Requests ({{ pendingCount }}) — oldest first
       </h2>
       <div v-if="loading" class="p-8">
         <LoadingBar />
@@ -169,7 +169,7 @@
       </div>
       <div v-else class="divide-y divide-anito-gray-light">
         <div
-          v-for="request in pendingRequests"
+          v-for="request in paginatedPendingRequests"
           :key="request.id"
           class="bg-white hover:shadow-md transition-all duration-200 border-b border-anito-gray-light last:border-b-0"
         >
@@ -306,6 +306,44 @@
             </div>
           </div>
         </div>
+        <div
+          v-if="pendingRequests.length > pageSize"
+          class="p-4 border-t border-anito-gray-light bg-white flex flex-wrap items-center justify-between gap-3"
+        >
+          <p class="text-anito-gray text-sm font-sans font-light">
+            Showing {{ (pendingPage - 1) * pageSize + 1 }}–{{ Math.min(pendingPage * pageSize, pendingRequests.length) }} of {{ pendingRequests.length }}
+          </p>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 text-sm font-sans text-anito-gray">
+              Per page
+              <select
+                :value="pageSize"
+                class="border border-anito-gray-light rounded px-2 py-1.5 text-anito-black text-sm focus:border-anito-blue-mid focus:outline-none"
+                @change="onPendingPageSizeChange($event)"
+              >
+                <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
+              </select>
+            </label>
+            <div class="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                :disabled="pendingPage <= 1"
+                @click="pendingPage--"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                :disabled="pendingPage >= totalPendingPages"
+                @click="pendingPage++"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -317,7 +355,7 @@
       <h2
         class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white"
       >
-        All Requests ({{ allRequests.length }})
+        All Requests ({{ allRequests.length }}) — oldest first
       </h2>
       <div v-if="loading" class="p-8">
         <LoadingBar />
@@ -367,7 +405,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="request in allRequests"
+              v-for="request in paginatedAllRequests"
               :key="request.id"
               class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
             >
@@ -418,6 +456,44 @@
             </tr>
           </tbody>
         </table>
+        <div
+          v-if="allRequests.length > pageSize"
+          class="p-4 border-t border-anito-gray-light bg-white flex flex-wrap items-center justify-between gap-3"
+        >
+          <p class="text-anito-gray text-sm font-sans font-light">
+            Showing {{ (allRequestsPage - 1) * pageSize + 1 }}–{{ Math.min(allRequestsPage * pageSize, allRequests.length) }} of {{ allRequests.length }}
+          </p>
+          <div class="flex items-center gap-3">
+            <label class="flex items-center gap-2 text-sm font-sans text-anito-gray">
+              Per page
+              <select
+                :value="pageSize"
+                class="border border-anito-gray-light rounded px-2 py-1.5 text-anito-black text-sm focus:border-anito-blue-mid focus:outline-none"
+                @change="onAllPageSizeChange($event)"
+              >
+                <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
+              </select>
+            </label>
+            <div class="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                :disabled="allRequestsPage <= 1"
+                @click="allRequestsPage--"
+              >
+                Previous
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                :disabled="allRequestsPage >= totalAllRequestsPages"
+                @click="allRequestsPage++"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -603,11 +679,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
 import { useFormatters } from "@/composables/useFormatters.js";
 import LoadingBar from "@/components/ui/LoadingBar.vue";
+import { Button, Dialog } from "@/components/ui";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
@@ -624,11 +701,34 @@ const selectedRequests = ref([]);
 const showBulkConfirm = ref(false);
 const bulkConfirmAction = ref('approve');
 
+const pageSizeOptions = [5, 10, 50, 100];
+const pageSize = ref(10);
+const allRequestsPage = ref(1);
+const pendingPage = ref(1);
+
 const loading = computed(() => rectificationsStore.loading);
 const error = computed(() => rectificationsStore.error);
 const allRequests = computed(() => rectificationsStore.requests);
 const pendingRequests = computed(() => rectificationsStore.pendingRequests);
 const pendingCount = computed(() => pendingRequests.value.length);
+const totalPendingPages = computed(() =>
+  Math.max(1, Math.ceil(pendingRequests.value.length / pageSize.value)),
+);
+const paginatedPendingRequests = computed(() => {
+  const list = pendingRequests.value;
+  const size = pageSize.value;
+  const from = (pendingPage.value - 1) * size;
+  return list.slice(from, from + size);
+});
+const totalAllRequestsPages = computed(() =>
+  Math.max(1, Math.ceil(allRequests.value.length / pageSize.value)),
+);
+const paginatedAllRequests = computed(() => {
+  const list = allRequests.value;
+  const size = pageSize.value;
+  const from = (allRequestsPage.value - 1) * size;
+  return list.slice(from, from + size);
+});
 const allSelected = computed(() => {
   return (
     pendingRequests.value.length > 0 &&
@@ -639,6 +739,21 @@ const allSelected = computed(() => {
 onMounted(async () => {
   await rectificationsStore.fetchRequests();
 });
+
+watch(activeTab, (tab) => {
+  if (tab === "all") allRequestsPage.value = 1;
+  if (tab === "pending") pendingPage.value = 1;
+});
+
+function onPendingPageSizeChange(ev) {
+  pageSize.value = Number(ev.target.value);
+  pendingPage.value = 1;
+}
+
+function onAllPageSizeChange(ev) {
+  pageSize.value = Number(ev.target.value);
+  allRequestsPage.value = 1;
+}
 
 function openDetailModal(request) {
   detailModalRequest.value = request;

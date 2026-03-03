@@ -29,7 +29,7 @@ export const useRectificationsStore = defineStore("rectifications", {
         const { data: rows, error } = await supabase
           .from("rectification_requests")
           .select("id, user_id, attendance_id, date, reason, requested_in, requested_out, status, created_at, reviewed_by, reviewed_at")
-          .order("created_at", { ascending: false });
+          .order("date", { ascending: true });
 
         if (error) throw error;
 
