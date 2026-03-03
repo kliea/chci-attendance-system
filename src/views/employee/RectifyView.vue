@@ -67,7 +67,15 @@
               ✕
             </button>
           </div>
-          <div class="flex gap-2 mt-3">
+          <!-- When editing, show single "Editing request" state; when adding, show Step 1 / Step 2 -->
+          <div v-if="editingRequest" class="flex gap-2 mt-3">
+            <span
+              class="text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium bg-anito-black text-white"
+            >
+              Editing request
+            </span>
+          </div>
+          <div v-else class="flex gap-2 mt-3">
             <span
               :class="[
                 'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium',
@@ -281,11 +289,77 @@
 
     <!-- Previous Requests -->
     <section class="rounded border border-anito-gray-light overflow-hidden">
-      <h2
-        class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white"
+      <div
+        class="flex flex-col gap-2 px-4 py-3 border-b border-anito-gray-light bg-white"
       >
-        Your Previous Requests
-      </h2>
+        <h2
+          class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium"
+        >
+          Your Previous Requests
+        </h2>
+        <div class="flex flex-wrap gap-2 text-xs font-sans">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              statusFilter === 'all'
+                ? 'bg-anito-black text-white border-anito-black'
+                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+            "
+            @click="statusFilter = 'all'"
+          >
+            All
+            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
+              {{ userRequests.length }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              statusFilter === 'pending'
+                ? 'bg-anito-black text-white border-anito-black'
+                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+            "
+            @click="statusFilter = 'pending'"
+          >
+            Pending
+            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
+              {{ pendingCount }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              statusFilter === 'approved'
+                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500'
+                : 'border-anito-gray-light text-anito-black hover:border-emerald-500'
+            "
+            @click="statusFilter = 'approved'"
+          >
+            Approved
+            <span class="text-[10px] px-1 rounded-full bg-emerald-100 text-emerald-700">
+              {{ approvedCount }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              statusFilter === 'rejected'
+                ? 'bg-red-500/10 text-red-700 border-red-500'
+                : 'border-anito-gray-light text-anito-black hover:border-red-500'
+            "
+            @click="statusFilter = 'rejected'"
+          >
+            Rejected
+            <span class="text-[10px] px-1 rounded-full bg-red-100 text-red-700">
+              {{ rejectedCount }}
+            </span>
+          </button>
+        </div>
+      </div>
       <div v-if="loading" class="p-8">
         <LoadingBar />
       </div>
@@ -311,6 +385,19 @@
                 Reason
               </th>
               <th
+                v-if="statusFilter === 'pending'"
+                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+              >
+                Nature of rectification
+              </th>
+              <th
+                v-if="statusFilter === 'pending'"
+                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+              >
+                Specified rectified time
+              </th>
+              <th
+                v-if="statusFilter === 'all'"
                 class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Status
@@ -324,7 +411,7 @@
           </thead>
           <tbody>
             <tr
-              v-for="request in userRequests"
+              v-for="request in filteredUserRequests"
               :key="request.id"
               class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
             >
@@ -337,7 +424,23 @@
               >
                 {{ request.reason }}
               </td>
-              <td class="px-4 py-3">
+              <td
+                v-if="statusFilter === 'pending'"
+                class="px-4 py-3 text-sm font-sans text-anito-black"
+              >
+                {{
+                  request.requested_in
+                    ? "Missed Logged-In"
+                    : "Missed Logged-Out"
+                }}
+              </td>
+              <td
+                v-if="statusFilter === 'pending'"
+                class="px-4 py-3 text-sm font-sans text-anito-black"
+              >
+                {{ request.requested_in || request.requested_out || "—" }}
+              </td>
+              <td v-if="statusFilter === 'all'" class="px-4 py-3">
                 <span
                   :class="getStatusClass(request.status)"
                   class="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded font-sans font-medium"
@@ -454,7 +557,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted, computed } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
 import { useFormatters } from "@/composables/useFormatters.js";
@@ -477,6 +580,22 @@ const form = reactive({
 });
 
 const userRequests = ref([]);
+const statusFilter = ref("all");
+
+const pendingCount = computed(
+  () => userRequests.value.filter((r) => r.status === "pending").length,
+);
+const approvedCount = computed(
+  () => userRequests.value.filter((r) => r.status === "approved").length,
+);
+const rejectedCount = computed(
+  () => userRequests.value.filter((r) => r.status === "rejected").length,
+);
+
+const filteredUserRequests = computed(() => {
+  if (statusFilter.value === "all") return userRequests.value;
+  return userRequests.value.filter((r) => r.status === statusFilter.value);
+});
 const loading = ref(false);
 const error = ref("");
 
@@ -679,8 +798,8 @@ function editRequest(request) {
   editingRequest.value = request;
   form.date = request.date;
   form.reason = request.reason;
-  form.nature = request.requestedIn ? "time_in" : "time_out";
-  form.rectifiedTime = request.requestedIn || request.requestedOut || "";
+  form.nature = request.requested_in ? "time_in" : "time_out";
+  form.rectifiedTime = request.requested_in || request.requested_out || "";
 
   // For editing, skip the multi-step flow and go directly to single submit mode
   modalStep.value = 1;

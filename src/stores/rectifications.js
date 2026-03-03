@@ -121,14 +121,19 @@ export const useRectificationsStore = defineStore("rectifications", {
             requested_out: requestData.requestedOut || null,
           })
           .eq("id", requestId)
-          .select()
-          .single();
+          .select();
 
         if (error) throw error;
 
+        const rows = Array.isArray(data) ? data : data ? [data] : [];
+        if (!rows.length) {
+          throw new Error("Rectification request not found for update");
+        }
+        const row = rows[0];
+
         this.submitSuccess = "Rectification request updated successfully";
         await this.fetchRequests();
-        return { ok: true, data };
+        return { ok: true, data: row };
       } catch (error) {
         this.submitError = error.message;
         if (import.meta.env.DEV) {
@@ -155,18 +160,23 @@ export const useRectificationsStore = defineStore("rectifications", {
           .from("rectification_requests")
           .update(updateData)
           .eq("id", requestId)
-          .select()
-          .single();
+          .select();
 
         if (error) throw error;
 
+        const rows = Array.isArray(data) ? data : data ? [data] : [];
+        if (!rows.length) {
+          throw new Error("Rectification request not found for status update");
+        }
+        const row = rows[0];
+
         // If approved, update attendance_logs (by staff_id from profile)
         if (status === "approved") {
-          await this.updateAttendanceRecord(data);
+          await this.updateAttendanceRecord(row);
         }
 
         await this.fetchRequests();
-        return { ok: true, data };
+        return { ok: true, data: row };
       } catch (error) {
         this.error = error.message;
         if (import.meta.env.DEV) {
@@ -387,12 +397,18 @@ export const useRectificationsStore = defineStore("rectifications", {
       this.submitSuccess = null;
 
       try {
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from("rectification_requests")
           .delete()
-          .eq("id", requestId);
+          .eq("id", requestId)
+          .select("id");
 
         if (error) throw error;
+
+        const rows = Array.isArray(data) ? data : data ? [data] : [];
+        if (!rows.length) {
+          throw new Error("Rectification request not found for delete");
+        }
 
         this.submitSuccess = "Rectification request deleted successfully";
         await this.fetchRequests();

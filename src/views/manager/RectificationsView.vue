@@ -352,11 +352,77 @@
       v-if="activeTab === 'all'"
       class="rounded border border-anito-gray-light overflow-hidden"
     >
-      <h2
-        class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white"
+      <div
+        class="flex flex-col gap-2 px-4 py-3 border-b border-anito-gray-light bg-white"
       >
-        All Requests ({{ allRequests.length }}) — oldest first
-      </h2>
+        <h2
+          class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium"
+        >
+          All Requests ({{ allRequests.length }}) — oldest first
+        </h2>
+        <div class="flex flex-wrap gap-2 text-xs font-sans">
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              allStatusFilter === 'all'
+                ? 'bg-anito-black text-white border-anito-black'
+                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+            "
+            @click="allStatusFilter = 'all'"
+          >
+            All
+            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
+              {{ allRequests.length }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              allStatusFilter === 'pending'
+                ? 'bg-anito-black text-white border-anito-black'
+                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+            "
+            @click="allStatusFilter = 'pending'"
+          >
+            Pending
+            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
+              {{ pendingCount }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              allStatusFilter === 'approved'
+                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500'
+                : 'border-anito-gray-light text-anito-black hover:border-emerald-500'
+            "
+            @click="allStatusFilter = 'approved'"
+          >
+            Approved
+            <span class="text-[10px] px-1 rounded-full bg-emerald-100 text-emerald-700">
+              {{ approvedCount }}
+            </span>
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            :class="
+              allStatusFilter === 'rejected'
+                ? 'bg-red-500/10 text-red-700 border-red-500'
+                : 'border-anito-gray-light text-anito-black hover-border-red-500'
+            "
+            @click="allStatusFilter = 'rejected'"
+          >
+            Rejected
+            <span class="text-[10px] px-1 rounded-full bg-red-100 text-red-700">
+              {{ rejectedCount }}
+            </span>
+          </button>
+        </div>
+      </div>
       <div v-if="loading" class="p-8">
         <LoadingBar />
       </div>
@@ -710,7 +776,19 @@ const loading = computed(() => rectificationsStore.loading);
 const error = computed(() => rectificationsStore.error);
 const allRequests = computed(() => rectificationsStore.requests);
 const pendingRequests = computed(() => rectificationsStore.pendingRequests);
+const approvedRequests = computed(() => rectificationsStore.approvedRequests);
+const rejectedRequests = computed(() => rectificationsStore.rejectedRequests);
 const pendingCount = computed(() => pendingRequests.value.length);
+const approvedCount = computed(() => approvedRequests.value.length);
+const rejectedCount = computed(() => rejectedRequests.value.length);
+
+const allStatusFilter = ref("all");
+const filteredAllRequests = computed(() => {
+  if (allStatusFilter.value === "all") return allRequests.value;
+  return allRequests.value.filter(
+    (r) => r.status === allStatusFilter.value,
+  );
+});
 const totalPendingPages = computed(() =>
   Math.max(1, Math.ceil(pendingRequests.value.length / pageSize.value)),
 );
@@ -721,10 +799,10 @@ const paginatedPendingRequests = computed(() => {
   return list.slice(from, from + size);
 });
 const totalAllRequestsPages = computed(() =>
-  Math.max(1, Math.ceil(allRequests.value.length / pageSize.value)),
+  Math.max(1, Math.ceil(filteredAllRequests.value.length / pageSize.value)),
 );
 const paginatedAllRequests = computed(() => {
-  const list = allRequests.value;
+  const list = filteredAllRequests.value;
   const size = pageSize.value;
   const from = (allRequestsPage.value - 1) * size;
   return list.slice(from, from + size);
