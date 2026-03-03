@@ -50,7 +50,11 @@
             <h2
               class="font-display font-light text-lg tracking-wide text-anito-black"
             >
-              DTR Rectification Request Form
+              {{
+                editingRequest
+                  ? "Edit DTR Rectification Request"
+                  : "DTR Rectification Request Form"
+              }}
             </h2>
             <button
               type="button"
@@ -207,6 +211,11 @@
               >
                 Status
               </th>
+              <th
+                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-center"
+              >
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -232,11 +241,111 @@
                   {{ request.status }}
                 </span>
               </td>
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2 justify-center">
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-anito-black hover:bg-anito-gray-light rounded transition-all duration-150 disabled:text-anito-gray disabled:cursor-not-allowed"
+                    @click="editRequest(request)"
+                    :disabled="request.status !== 'pending'"
+                  >
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      ></path>
+                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-anito-black hover:bg-anito-gray-light rounded transition-all duration-150 disabled:text-anito-gray disabled:cursor-not-allowed"
+                    @click="openDeleteModal(request)"
+                    :disabled="request.status !== 'pending'"
+                  >
+                    <svg
+                      class="w-3 h-3"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      ></path>
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
+
+    <!-- Delete Confirmation Modal -->
+    <div
+      v-if="showDeleteModal"
+      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      @click.self="closeDeleteModal"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-anito-gray-light overflow-hidden"
+      >
+        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+          <div class="flex items-center justify-between">
+            <h2
+              class="font-display font-light text-lg tracking-wide text-anito-black"
+            >
+              Confirm Delete
+            </h2>
+            <button
+              type="button"
+              class="text-anito-gray hover:text-anito-black transition-colors"
+              aria-label="Close"
+              @click="closeDeleteModal"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div class="p-6">
+          <p class="text-sm font-sans text-anito-black mb-4">
+            Are you sure you want to delete this rectification request?
+          </p>
+          <p class="text-xs font-sans text-anito-gray mb-6">
+            This action cannot be undone.
+          </p>
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              @click="closeDeleteModal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-gray transition-colors duration-150 font-sans font-medium"
+              :disabled="deleting"
+              @click="confirmDelete"
+            >
+              {{ deleting ? "Deleting…" : "Delete" }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -264,6 +373,10 @@ const error = ref("");
 const submitting = ref(false);
 const submitError = ref("");
 const submitSuccess = ref("");
+const editingRequest = ref(null);
+const showDeleteModal = ref(false);
+const deletingRequest = ref(null);
+const deleting = ref(false);
 
 function openRectifyModal() {
   resetForm();
@@ -274,6 +387,7 @@ function openRectifyModal() {
 
 function closeRectifyModal() {
   showRectifyModal.value = false;
+  editingRequest.value = null;
   resetForm();
 }
 
@@ -306,25 +420,43 @@ async function submitRequest() {
   const requestedIn = form.nature === "time_in" ? form.rectifiedTime : null;
   const requestedOut = form.nature === "time_out" ? form.rectifiedTime : null;
 
-  const result = await rectificationsStore.createRequest({
+  const requestData = {
     userId: authStore.profile?.id,
     attendanceId: null,
     date: form.date,
     reason: form.reason.trim(),
     requestedIn: requestedIn || null,
     requestedOut: requestedOut || null,
-  });
+  };
+
+  let result;
+
+  if (editingRequest.value) {
+    // Update existing request
+    result = await rectificationsStore.updateRequest(
+      editingRequest.value.id,
+      requestData,
+    );
+  } else {
+    // Create new request
+    result = await rectificationsStore.createRequest(requestData);
+  }
 
   if (result.ok) {
-    submitSuccess.value =
-      "Your rectification request has been submitted successfully.";
+    submitSuccess.value = editingRequest.value
+      ? "Your rectification request has been updated successfully."
+      : "Your rectification request has been submitted successfully.";
     closeRectifyModal();
     await fetchUserRequests();
     setTimeout(() => {
       submitSuccess.value = "";
     }, 5000);
   } else {
-    submitError.value = result.error || "Failed to submit request";
+    submitError.value =
+      result.error ||
+      (editingRequest.value
+        ? "Failed to update request"
+        : "Failed to submit request");
   }
 
   submitting.value = false;
@@ -345,10 +477,60 @@ function formatDate(dateString) {
 
 function getStatusClass(status) {
   const classes = {
-    pending: "bg-yellow-100 text-yellow-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
+    pending: "border border-anito-black text-anito-black",
+    approved: "bg-anito-black text-white",
+    rejected: "border border-anito-gray text-anito-gray",
   };
-  return classes[status] || "bg-gray-100 text-gray-800";
+  return classes[status] || "border border-anito-gray text-anito-gray";
+}
+
+function editRequest(request) {
+  if (request.status !== "pending") return;
+
+  editingRequest.value = request;
+  form.date = request.date;
+  form.reason = request.reason;
+  form.nature = request.requestedIn ? "time_in" : "time_out";
+  form.rectifiedTime = request.requestedIn || request.requestedOut || "";
+
+  showRectifyModal.value = true;
+}
+
+function openDeleteModal(request) {
+  if (request.status !== "pending") return;
+
+  deletingRequest.value = request;
+  showDeleteModal.value = true;
+}
+
+function closeDeleteModal() {
+  showDeleteModal.value = false;
+  deletingRequest.value = null;
+}
+
+async function confirmDelete() {
+  if (!deletingRequest.value) return;
+
+  deleting.value = true;
+
+  try {
+    const result = await rectificationsStore.deleteRequest(
+      deletingRequest.value.id,
+    );
+    if (result.ok) {
+      submitSuccess.value = "Request deleted successfully.";
+      closeDeleteModal();
+      await fetchUserRequests();
+      setTimeout(() => {
+        submitSuccess.value = "";
+      }, 3000);
+    } else {
+      submitError.value = result.error || "Failed to delete request";
+    }
+  } catch (error) {
+    submitError.value = "An error occurred while deleting the request.";
+  } finally {
+    deleting.value = false;
+  }
 }
 </script>
