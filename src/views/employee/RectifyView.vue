@@ -572,6 +572,10 @@ async function submitEditRequest() {
     requestedOut: requestedOut || null,
   };
 
+  // Debug logging
+  console.log("Editing request object:", editingRequest.value);
+  console.log("Request ID being passed:", editingRequest.value.id);
+
   const result = await rectificationsStore.updateRequest(
     editingRequest.value.id,
     requestData,
@@ -675,6 +679,9 @@ async function submitAllRequests() {
 
 function editRequest(request) {
   if (request.status !== "pending") return;
+
+  // Debug logging
+  console.log("Edit request called with:", request);
 
   editingRequest.value = request;
   form.date = request.date;

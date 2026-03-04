@@ -111,6 +111,10 @@ export const useRectificationsStore = defineStore("rectifications", {
       this.submitError = null;
       this.submitSuccess = null;
 
+      // Debug logging
+      console.log("Updating request with ID:", requestId);
+      console.log("Request data:", requestData);
+
       try {
         const { data, error } = await supabase
           .from("rectification_requests")
