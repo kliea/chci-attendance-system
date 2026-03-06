@@ -60,11 +60,13 @@ const managerNav = [
   { to: "/attendance", label: "Employee DTR" },
   { to: "/import", label: "Import" },
   { to: "/rectifications", label: "Rectifications" },
+  { to: "/overtime", label: "Overtime" },
 ];
 
 const employeeNav = [
   { to: "/my-attendance", label: "My Attendance" },
   { to: "/rectify", label: "Rectify" },
+  { to: "/my-overtime", label: "Overtime" },
 ];
 </script>
 
