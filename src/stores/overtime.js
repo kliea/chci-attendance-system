@@ -103,14 +103,20 @@ export const useOvertimeStore = defineStore("overtime", {
           });
         }
 
-        // Attach approver info
-        return (rows || []).map((r) => ({
+        // Attach approver info and update store state
+        const processedRequests = (rows || []).map((r) => ({
           ...r,
           approver: profileMap[r.approved_by] || null,
         }));
+
+        // Update store state for consistency
+        this.requests = processedRequests;
+
+        // Return processed requests for backward compatibility
+        return processedRequests;
       } catch (err) {
         console.error("Error fetching user overtime requests:", err);
-        this.error = "Failed to fetch your overtime requests";
+        this.error = "Failed to fetch overtime requests";
         return [];
       } finally {
         this.loading = false;
