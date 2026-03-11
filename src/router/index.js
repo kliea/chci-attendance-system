@@ -51,6 +51,18 @@ const routes = [
         meta: { managerOnly: true },
       },
       {
+        path: "overtime",
+        name: "manager-overtime",
+        component: () => import("@/views/manager/OvertimeView.vue"),
+        meta: { managerOnly: true },
+      },
+      {
+        path: "settings",
+        name: "settings",
+        component: () => import("@/views/manager/SettingsView.vue"),
+        meta: { managerOnly: true },
+      },
+      {
         path: "holidays",
         name: "holidays",
         component: () => import("@/views/manager/HolidaysView.vue"),
@@ -66,6 +78,12 @@ const routes = [
         path: "rectify",
         name: "rectify",
         component: () => import("@/views/employee/RectifyView.vue"),
+        meta: { employeeOnly: true },
+      },
+      {
+        path: "my-overtime",
+        name: "employee-overtime",
+        component: () => import("@/views/employee/OvertimeView.vue"),
         meta: { employeeOnly: true },
       },
     ],
