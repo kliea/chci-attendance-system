@@ -61,6 +61,7 @@ const managerNav = [
   { to: "/import", label: "Import" },
   { to: "/rectifications", label: "Rectifications" },
   { to: "/overtime", label: "Overtime" },
+  { to: "/settings", label: "Settings" },
 ];
 
 const employeeNav = [

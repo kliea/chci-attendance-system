@@ -57,6 +57,12 @@ const routes = [
         meta: { managerOnly: true },
       },
       {
+        path: "settings",
+        name: "settings",
+        component: () => import("@/views/manager/SettingsView.vue"),
+        meta: { managerOnly: true },
+      },
+      {
         path: "holidays",
         name: "holidays",
         component: () => import("@/views/manager/HolidaysView.vue"),
