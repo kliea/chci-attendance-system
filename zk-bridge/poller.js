@@ -1,6 +1,9 @@
-require('dotenv').config()
-const ZKLib = require('node-zklib')
-const { createClient } = require('@supabase/supabase-js')
+import 'dotenv/config'
+import ZKLibModule from 'node-zklib'
+import { createClient } from '@supabase/supabase-js'
+
+// node-zklib is CommonJS; support both default/named export shapes
+const ZKLib = ZKLibModule?.default || ZKLibModule
 
 // ---- Env / config ----
 
@@ -245,7 +248,7 @@ async function pollOnce() {
 
 // ---- Entrypoint ----
 
-;(async () => {
+async function main() {
   console.log('[Bridge] ZKTeco → Supabase poller starting...')
   console.log(`[Bridge] Device: ${ZK_IP}:${ZK_PORT}`)
   console.log(`[Bridge] Poll interval: ${POLL_INTERVAL_MS}ms`)
@@ -254,5 +257,10 @@ async function pollOnce() {
 
   const intervalMs = parseInt(POLL_INTERVAL_MS, 10) || 60000
   setInterval(pollOnce, intervalMs)
-})()
+}
+
+main().catch((err) => {
+  console.error('[Bridge] Fatal error in main():', err?.message || err)
+})
+
 
