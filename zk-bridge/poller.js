@@ -187,21 +187,28 @@ async function pollOnce() {
     console.log('[ZK] Connecting to device...')
     await zk.createSocket()
 
+    // Disable device during read (same as PHP ZK flow) — avoids lockup/partial data on some ZKTeco units
+    try {
+      await zk.disableDevice()
+    } catch (e) {
+      console.warn('[ZK] disableDevice failed (continuing):', e?.message)
+    }
+
     const { data: rawLogs } = await zk.getAttendances()
     const logs = rawLogs || []
     console.log(`[ZK] Fetched ${logs.length} raw records`)
 
     if (!logs.length) {
-      await zk.disconnect()
       console.log('[ZK] No records; done.')
       return
     }
 
     const normalized = logs.map(normalizeLog).filter(Boolean)
+    // Sort by timestamp (same as PHP usort) so earliest/latest per day are correct if device order is unstable
+    normalized.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
     console.log(`[Bridge] Normalized to ${normalized.length} device records`)
 
     if (!normalized.length) {
-      await zk.disconnect()
       console.log('[Bridge] No valid records after normalization; done.')
       return
     }
@@ -218,7 +225,6 @@ async function pollOnce() {
     }
 
     if (!rows.length) {
-      await zk.disconnect()
       console.log('[Bridge] No rows to upsert after mapping; done.')
       return
     }
@@ -238,6 +244,11 @@ async function pollOnce() {
   } catch (err) {
     console.error('[Poll] Error during poll:', err.message || err)
   } finally {
+    try {
+      await zk.enableDevice()
+    } catch {
+      // ignore
+    }
     try {
       await zk.disconnect()
     } catch {
