@@ -10,15 +10,16 @@
     <Card class="no-print">
       <CardHeaderFlex>
         <div>
-            <Label for-id="my-month-filter">Month</Label>
-            <Input
-              id="my-month-filter"
-              v-model="selectedMonth"
-              type="month"
-              class="h-10"
-              @change="applyMonth"
-            />
-          </div>
+          <Label for-id="my-month-filter">Month</Label>
+          <Input
+            id="my-month-filter"
+            v-model="selectedMonth"
+            type="month"
+            class="h-10"
+            @change="applyMonth"
+          />
+        </div>
+        <div class="flex items-end gap-2">
           <Button
             variant="secondary"
             class="h-10"
@@ -27,6 +28,15 @@
           >
             {{ attendance.loading ? 'Loading…' : 'Apply' }}
           </Button>
+          <Button
+            variant="outline"
+            class="h-10 text-[10px] tracking-[0.15em] uppercase font-sans font-medium"
+            :disabled="attendance.loading"
+            @click="toggleAllTimeTotals"
+          >
+            {{ showAllTimeTotals ? 'Show month only' : 'Show all-time total' }}
+          </Button>
+        </div>
       </CardHeaderFlex>
 
       <div v-if="attendance.error" class="p-4 text-red-600 text-sm">{{ attendance.error }}</div>
@@ -60,36 +70,75 @@
 
     <div class="no-print">
       <Dialog v-model="showDetailModal" max-width="max-w-3xl">
-      <template #header>
-        <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
-          Daily logs — {{ selectedEmployee?.full_name }} ({{ selectedEmployee?.bio_id }})
-        </h2>
-      </template>
-      <template #actions>
-        <Button
-          variant="secondary"
-          size="sm"
-          :disabled="appendix24TemplateLoading"
-          @click="downloadAppendix24FillerTemplate"
-        >
-          {{ appendix24TemplateLoading ? 'Generating…' : 'Download filler template' }}
-        </Button>
-        <PrintDailyLogsButton
-          size="sm"
-          :employee-name="selectedEmployee?.full_name ?? ''"
-          :month-label="formatMonthLabel(selectedMonth)"
-          :selected-month="selectedMonth"
-          :logs="detailLogs"
-          :day-rows="detailDayRows"
-        />
-      </template>
-      <div class="p-4">
-        <AttendanceDayTable
-          :day-rows="detailDayRows"
-          empty-text="No daily logs for this month."
-        />
-      </div>
-    </Dialog>
+        <template #header>
+          <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
+            {{ showAllTimeTotals ? 'Monthly summary' : 'Daily logs' }} — {{ selectedEmployee?.full_name }} ({{ selectedEmployee?.bio_id }})
+          </h2>
+        </template>
+        <template #actions>
+          <template v-if="!showAllTimeTotals">
+            <Button
+              variant="secondary"
+              size="sm"
+              :disabled="appendix24TemplateLoading"
+              @click="downloadAppendix24FillerTemplate"
+            >
+              {{ appendix24TemplateLoading ? 'Generating…' : 'Download filler template' }}
+            </Button>
+            <PrintDailyLogsButton
+              size="sm"
+              :employee-name="selectedEmployee?.full_name ?? ''"
+              :month-label="formatMonthLabel(selectedMonth)"
+              :selected-month="selectedMonth"
+              :logs="detailLogs"
+              :day-rows="detailDayRows"
+            />
+          </template>
+        </template>
+        <div class="p-4">
+          <AttendanceDayTable
+            v-if="!showAllTimeTotals"
+            :day-rows="detailDayRows"
+            empty-text="No daily logs for this month."
+          />
+          <div v-else class="space-y-3">
+            <table class="w-full text-sm text-left border border-anito-gray-light rounded">
+              <thead class="bg-anito-black">
+                <tr>
+                  <th class="px-3 py-2 text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium text-left">
+                    Month
+                  </th>
+                  <th class="px-3 py-2 text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium text-left">
+                    Hours rendered
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in detailMonthlyRows"
+                  :key="row.ym"
+                  class="border-t border-anito-gray-light"
+                >
+                  <td class="px-3 py-2 text-anito-black">
+                    {{ row.label }}
+                  </td>
+                  <td class="px-3 py-2 font-mono text-xs text-anito-gray">
+                    {{ row.hours }}
+                  </td>
+                </tr>
+                <tr v-if="!detailMonthlyRows.length">
+                  <td
+                    colspan="2"
+                    class="px-3 py-2 text-anito-gray text-sm font-sans font-light"
+                  >
+                    No logs for this employee.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Dialog>
     </div>
 
     <div id="dtr-print-area" class="hidden print:block p-6">
@@ -133,7 +182,7 @@ import { useAttendanceStore } from '@/stores/attendance.js'
 import { useStaffStore } from '@/stores/staff.js'
 import { useEmployeesStore } from '@/stores/employees.js'
 import { groupLogsByStaff } from '@/composables/useHoursRendered.js'
-import { buildDayRows, totalHoursRenderedInMonth } from '@/composables/useAttendanceDayRows.js'
+import { buildDayRows, totalHoursRenderedInMonth, totalHoursRenderedAllTime } from '@/composables/useAttendanceDayRows.js'
 import { formatDate } from '@/composables/useFormatters.js'
 import { getAppendix24TemplateBlob } from '@/composables/useFillAppendix24Pdf.js'
 import {
@@ -153,6 +202,7 @@ const staff = useStaffStore()
 const employees = useEmployeesStore()
 
 const selectedMonth = ref('')
+const showAllTimeTotals = ref(false)
 const selectedEmployee = ref(null)
 const showDetailModal = computed({
   get: () => !!selectedEmployee.value,
@@ -161,14 +211,17 @@ const showDetailModal = computed({
 const printPayload = ref(null)
 const appendix24TemplateLoading = ref(false)
 
-const summaryColumns = [
+const summaryColumns = computed(() => [
   { key: 'full_name', label: 'Name' },
   { key: 'bio_id', label: 'Bio ID' },
   { key: 'program', label: 'Program' },
-  { key: 'hours', label: 'Hours rendered' },
+  {
+    key: 'hours',
+    label: showAllTimeTotals.value ? 'Hours rendered (all time)' : 'Hours rendered (month)',
+  },
   { key: 'daysPresent', label: 'Days present' },
   { key: 'actions', label: 'Actions', class: 'w-24' },
-]
+])
 
 const monthRange = computed(() => {
   if (!selectedMonth.value || selectedMonth.value.length < 7) return { dateFrom: null, dateTo: null }
@@ -196,7 +249,9 @@ const employeeRows = computed(() => {
   return staff.list.map((s) => {
     const sum = staffSummary.value[s.id] || { hours: 0, daysPresent: 0, logs: [] }
     const logs = sum.logs || []
-    const hours = totalHoursRenderedInMonth(selectedMonth.value, logs)
+    const hours = showAllTimeTotals.value
+      ? totalHoursRenderedAllTime(logs)
+      : totalHoursRenderedInMonth(selectedMonth.value, logs)
     return {
       ...s,
       program: profileByBioId.value[s.bio_id]?.program ?? '—',
@@ -217,6 +272,27 @@ const detailDayRows = computed(() =>
   buildDayRows(selectedMonth.value, detailLogs.value)
 )
 
+const detailMonthlyRows = computed(() => {
+  if (!selectedEmployee.value) return []
+  const byMonth = {}
+  for (const log of detailLogs.value) {
+    const d =
+      (typeof log.date === 'string' ? log.date : log.date?.slice?.(0, 10)) ??
+      ''
+    if (!d) continue
+    const ym = d.slice(0, 7)
+    if (!byMonth[ym]) byMonth[ym] = []
+    byMonth[ym].push(log)
+  }
+  const rows = Object.entries(byMonth).map(([ym, logs]) => ({
+    ym,
+    label: formatMonthLabel(ym),
+    hours: totalHoursRenderedInMonth(ym, logs),
+  }))
+  rows.sort((a, b) => (a.ym < b.ym ? -1 : 1))
+  return rows
+})
+
 const canPrint = computed(() => {
   if (selectedEmployee.value) return true
   return employeeRows.value.length > 0
@@ -232,7 +308,20 @@ function setDefaultMonth() {
 function applyMonth() {
   const { dateFrom, dateTo } = monthRange.value
   if (!dateFrom || !dateTo) return
+  showAllTimeTotals.value = false
   attendance.fetchAttendance({ dateFrom, dateTo })
+}
+
+function toggleAllTimeTotals() {
+  if (showAllTimeTotals.value) {
+    // Go back to month-based view
+    showAllTimeTotals.value = false
+    applyMonth()
+  } else {
+    // Show all-time totals: fetch all logs without date filter
+    showAllTimeTotals.value = true
+    attendance.fetchAttendance({})
+  }
 }
 
 function openDetail(row) {

@@ -72,7 +72,8 @@ function toDateTimeParts(recordTime) {
   return { date, time }
 }
 
-// Normalize raw device log into { bio_id, date, timestamp, in_out }
+// Normalize raw device log into { bio_id, date, timestamp, in_out }.
+// Field semantics match Import (useZkParser + import store): .dat = PIN, Date, Time, Verify, In/Out; in_out 0=in, 1=out, 4=OT in, 5=OT out.
 function normalizeLog(log) {
   // node-zklib variants: deviceUserId, uid, userId, etc.
   const bioId =
@@ -229,6 +230,8 @@ async function pollOnce() {
       return
     }
 
+    // Row shape aligned with ImportView/import store: staff_id, date, source, time_in, time_out [, overtime_in, overtime_out].
+    // Base schema (supabase-schema.sql) has no overtime columns; add-overtime-to-attendance-logs.sql adds them. If upsert fails on unknown columns, strip overtime like the import store: .map(({ overtime_in, overtime_out, ...r }) => r)
     const payload = rows.map(stripNulls)
 
     console.log(`[Supabase] Upserting ${payload.length} attendance rows...`)

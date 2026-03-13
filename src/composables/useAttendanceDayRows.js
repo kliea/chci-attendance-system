@@ -129,3 +129,18 @@ export function totalHoursRenderedInMonth(selectedMonth, logs) {
   }
   return Math.round(total * 100) / 100;
 }
+
+/**
+ * Sum of hours rendered for all logs across all time (same 8–5 rule as per day).
+ * @param {Array<{ time_in?: string, time_out?: string }>} logs
+ * @returns {number}
+ */
+export function totalHoursRenderedAllTime(logs) {
+  if (!Array.isArray(logs)) return 0;
+  let total = 0;
+  for (const log of logs) {
+    const h = computeHoursRenderedForDay(log.time_in, log.time_out);
+    if (h != null) total += h;
+  }
+  return Math.round(total * 100) / 100;
+}
