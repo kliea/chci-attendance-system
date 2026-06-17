@@ -1,99 +1,102 @@
 <template>
-  <div class="max-w-6xl">
+    <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
     <header class="mb-6">
-      <h1
-        class="font-display font-light text-xl tracking-wide text-anito-black"
-      >
-        Overtime Requests
-      </h1>
       <p
-        class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed"
+        class="text-gray-500 text-sm font-sans font-medium mt-1 leading-relaxed"
       >
         Review and approve employee overtime requests.
       </p>
     </header>
 
-    <!-- Success/error messages -->
     <div
       v-if="submitSuccess"
-      class="mb-4 p-3 rounded bg-green-50 text-green-800 text-sm font-sans"
+      class="mb-4 p-3 rounded bg-green-50 text-green-800 text-sm font-sans font-medium"
     >
       {{ submitSuccess }}
     </div>
     <div
       v-if="submitError"
-      class="mb-4 p-3 rounded bg-red-50 text-red-700 text-sm font-sans"
+      class="mb-4 p-3 rounded bg-red-50 text-red-700 text-sm font-sans font-medium"
     >
       {{ submitError }}
     </div>
 
-    <!-- Filter tabs -->
     <section
-      class="rounded border border-anito-gray-light overflow-hidden mb-6"
+      class="rounded border border-gray-100 overflow-hidden mb-6 shadow-sm"
     >
       <div
-        class="flex flex-col gap-2 px-4 py-3 border-b border-anito-gray-light bg-white"
+        class="flex flex-col gap-2 px-4 py-3 border-b border-gray-100 bg-white"
       >
-        <div class="flex flex-wrap gap-2 text-xs font-sans">
+        <div class="flex flex-wrap gap-2 text-xs font-sans font-medium">
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-medium"
             :class="
               statusFilter === 'all'
-                ? 'bg-anito-black text-white border-anito-black'
-                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+                ? 'bg-[#003777] text-white border-[#003777]'
+                : 'border-gray-200 text-gray-700 hover:text-[#003777] hover:bg-blue-50'
             "
             @click="statusFilter = 'all'"
           >
             All
-            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
+            <span 
+              class="text-[10px] px-1 rounded-full font-medium"
+              :class="statusFilter === 'all' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'"
+            >
               {{ allCount }}
             </span>
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-medium"
             :class="
               statusFilter === 'pending'
-                ? 'bg-anito-black text-white border-anito-black'
-                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+                ? 'bg-[#003777] text-white border-[#003777]'
+                : 'border-gray-200 text-gray-700 hover:text-[#003777] hover:bg-blue-50'
             "
             @click="statusFilter = 'pending'"
           >
             Pending
-            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
+            <span 
+              class="text-[10px] px-1 rounded-full font-medium"
+              :class="statusFilter === 'pending' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'"
+            >
               {{ pendingCount }}
             </span>
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-medium"
             :class="
               statusFilter === 'approved'
-                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500'
-                : 'border-anito-gray-light text-anito-black hover:border-emerald-500'
+                ? 'bg-emerald-600 text-white border-emerald-600'
+                : 'border-gray-200 text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
             "
             @click="statusFilter = 'approved'"
           >
             Approved
             <span
-              class="text-[10px] px-1 rounded-full bg-emerald-100 text-emerald-700"
+              class="text-[10px] px-1 rounded-full font-medium"
+              :class="statusFilter === 'approved' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700'"
             >
               {{ approvedCount }}
             </span>
           </button>
           <button
             type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px] font-medium"
             :class="
               statusFilter === 'rejected'
-                ? 'bg-red-500/10 text-red-700 border-red-500'
-                : 'border-anito-gray-light text-anito-black hover:border-red-500'
+                ? 'bg-red-600 text-white border-red-600'
+                : 'border-gray-200 text-gray-700 hover:text-red-600 hover:bg-red-50'
             "
             @click="statusFilter = 'rejected'"
           >
             Rejected
-            <span class="text-[10px] px-1 rounded-full bg-red-100 text-red-700">
+            <span 
+              class="text-[10px] px-1 rounded-full font-medium"
+              :class="statusFilter === 'rejected' ? 'bg-white/20 text-white' : 'bg-red-50 text-red-700'"
+            >
               {{ rejectedCount }}
             </span>
           </button>
@@ -101,12 +104,11 @@
       </div>
     </section>
 
-    <!-- Overtime requests table -->
-    <section class="rounded border border-anito-gray-light overflow-hidden">
+    <section class="rounded border border-gray-100 overflow-hidden shadow-sm bg-white">
       <div v-if="loading" class="p-8">
         <LoadingBar />
       </div>
-      <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
+      <div v-else-if="error" class="p-4 text-red-600 text-sm font-sans font-medium">{{ error }}</div>
       <div v-else-if="!filteredRequests.length" class="p-8">
         <EmptyState
           :title="`No ${statusFilter === 'all' ? '' : statusFilter} overtime requests`"
@@ -115,40 +117,40 @@
       </div>
       <div v-else class="overflow-x-auto">
         <table class="w-full text-sm text-left">
-          <thead class="bg-anito-black">
+          <thead class="bg-[#003777]">
             <tr>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Employee
               </th>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Date
               </th>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Time
               </th>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Type
               </th>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Reason
               </th>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
               >
                 Status
               </th>
               <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-center"
+                class="text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-center"
               >
                 Actions
               </th>
@@ -158,31 +160,31 @@
             <tr
               v-for="request in filteredRequests"
               :key="request.id"
-              class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
+              class="bg-white hover:bg-blue-50/40 border-b border-gray-100 transition-colors duration-150"
             >
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-4 py-3 text-sm font-sans text-gray-700">
                 <div>
-                  <div class="font-medium">
+                  <div class="font-semibold text-gray-900">
                     {{ request.requester?.full_name || "Unknown" }}
                   </div>
-                  <div class="text-xs text-anito-gray">
+                  <div class="text-xs text-gray-500 font-medium">
                     ID: {{ request.requester?.bio_id || "N/A" }}
                   </div>
                 </div>
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-4 py-3 text-sm font-sans text-gray-700 font-medium">
                 {{ formatDate(request.date) }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-4 py-3 text-sm font-sans text-gray-700 font-medium">
                 {{ request.start_time }} - {{ request.end_time }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-4 py-3 text-sm font-sans text-gray-700 font-medium">
                 <span class="capitalize">{{
                   request.type.replace("_", " ")
                 }}</span>
               </td>
               <td
-                class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate"
+                class="px-4 py-3 text-sm font-sans text-gray-600 max-w-xs truncate font-medium"
                 :title="request.reason"
               >
                 {{ request.reason }}
@@ -241,7 +243,7 @@
                   </button>
                   <div
                     v-if="request.status !== 'pending'"
-                    class="text-xs text-anito-gray"
+                    class="text-xs text-gray-500 font-medium"
                   >
                     <div v-if="request.approver">
                       {{
@@ -249,9 +251,9 @@
                           ? "Approved by"
                           : "Rejected by"
                       }}:<br />
-                      {{ request.approver.full_name }}
+                      <span class="text-gray-900 font-semibold">{{ request.approver.full_name }}</span>
                     </div>
-                    <div v-if="request.approved_at">
+                    <div v-if="request.approved_at" class="text-gray-400 text-[11px] mt-0.5">
                       {{ formatDate(request.approved_at) }}
                     </div>
                   </div>
@@ -263,25 +265,24 @@
       </div>
     </section>
 
-    <!-- Approve Modal -->
     <div
       v-if="showApproveModal"
-      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm"
       @click.self="closeApproveModal"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-anito-gray-light overflow-hidden"
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-gray-100 overflow-hidden"
       >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+        <div class="px-6 py-4 border-b border-gray-100 bg-white">
           <div class="flex items-center justify-between">
             <h2
-              class="font-display font-light text-lg tracking-wide text-anito-black"
+              class="font-sans font-semibold text-lg tracking-wide text-gray-900"
             >
               Approve Overtime Request
             </h2>
             <button
               type="button"
-              class="text-anito-gray hover:text-anito-black transition-colors"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Close"
               @click="closeApproveModal"
             >
@@ -291,41 +292,41 @@
         </div>
         <div class="p-6">
           <div class="mb-4">
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Employee:</strong>
-              {{ selectedRequest?.requester?.full_name }}
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Employee:</strong>
+              <span class="text-gray-900 font-semibold">{{ selectedRequest?.requester?.full_name }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Date:</strong> {{ formatDate(selectedRequest?.date) }}
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Date:</strong> 
+              <span class="text-gray-900">{{ formatDate(selectedRequest?.date) }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Time:</strong> {{ selectedRequest?.start_time }} -
-              {{ selectedRequest?.end_time }}
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Time:</strong> 
+              <span class="text-gray-900">{{ selectedRequest?.start_time }} - {{ selectedRequest?.end_time }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Type:</strong>
-              <span class="capitalize">{{
-                selectedRequest?.type?.replace("_", " ")
-              }}</span>
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Type:</strong>
+              <span class="capitalize text-gray-900">{{ selectedRequest?.type?.replace("_", " ") }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black">
-              <strong>Reason:</strong> {{ selectedRequest?.reason }}
+            <p class="text-sm font-sans text-gray-700 font-medium">
+              <strong class="font-medium text-gray-500">Reason:</strong> 
+              <span class="text-gray-900">{{ selectedRequest?.reason }}</span>
             </p>
           </div>
-          <p class="text-xs font-sans text-anito-gray mb-6">
+          <p class="text-xs font-sans text-gray-400 mb-6 font-medium">
             Are you sure you want to approve this overtime request?
           </p>
           <div class="flex gap-2 justify-end">
             <button
               type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              class="border border-gray-200 text-gray-700 text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-gray-900 transition-colors duration-150 font-sans font-medium"
               @click="closeApproveModal"
             >
               Cancel
             </button>
             <button
               type="button"
-              class="bg-emerald-600 text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-emerald-700 transition-colors duration-150 font-sans font-medium"
+              class="bg-[#003777] text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-[#002555] transition-colors duration-150 font-sans font-medium"
               :disabled="submitting"
               @click="confirmApprove"
             >
@@ -336,25 +337,24 @@
       </div>
     </div>
 
-    <!-- Reject Modal -->
     <div
       v-if="showRejectModal"
-      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm"
       @click.self="closeRejectModal"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-anito-gray-light overflow-hidden"
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-gray-100 overflow-hidden"
       >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
+        <div class="px-6 py-4 border-b border-gray-100 bg-white">
           <div class="flex items-center justify-between">
             <h2
-              class="font-display font-light text-lg tracking-wide text-anito-black"
+              class="font-sans font-semibold text-lg tracking-wide text-gray-900"
             >
               Reject Overtime Request
             </h2>
             <button
               type="button"
-              class="text-anito-gray hover:text-anito-black transition-colors"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Close"
               @click="closeRejectModal"
             >
@@ -364,30 +364,30 @@
         </div>
         <form @submit.prevent="confirmReject" class="p-6">
           <div class="mb-4">
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Employee:</strong>
-              {{ selectedRequest?.requester?.full_name }}
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Employee:</strong>
+              <span class="text-gray-900 font-semibold">{{ selectedRequest?.requester?.full_name }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Date:</strong> {{ formatDate(selectedRequest?.date) }}
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Date:</strong> 
+              <span class="text-gray-900">{{ formatDate(selectedRequest?.date) }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Time:</strong> {{ selectedRequest?.start_time }} -
-              {{ selectedRequest?.end_time }}
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Time:</strong> 
+              <span class="text-gray-900">{{ selectedRequest?.start_time }} - {{ selectedRequest?.end_time }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-2">
-              <strong>Type:</strong>
-              <span class="capitalize">{{
-                selectedRequest?.type?.replace("_", " ")
-              }}</span>
+            <p class="text-sm font-sans text-gray-700 mb-2 font-medium">
+              <strong class="font-medium text-gray-500">Type:</strong>
+              <span class="capitalize text-gray-900">{{ selectedRequest?.type?.replace("_", " ") }}</span>
             </p>
-            <p class="text-sm font-sans text-anito-black mb-4">
-              <strong>Reason:</strong> {{ selectedRequest?.reason }}
+            <p class="text-sm font-sans text-gray-700 mb-4 font-medium">
+              <strong class="font-medium text-gray-500">Reason:</strong> 
+              <span class="text-gray-900">{{ selectedRequest?.reason }}</span>
             </p>
 
             <label
               for="rejection-reason"
-              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
+              class="block text-[10px] tracking-[0.25em] uppercase text-gray-500 font-sans font-medium mb-2"
             >
               Rejection Reason *
             </label>
@@ -396,14 +396,14 @@
               v-model="rejectionReason"
               rows="3"
               required
-              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors resize-none"
+              class="border border-gray-200 rounded p-3 text-sm font-sans font-medium text-gray-900 placeholder-gray-400 focus:border-[#003777] focus:outline-none w-full transition-colors resize-none"
               placeholder="Provide a reason for rejection..."
             />
           </div>
           <div class="flex gap-2 justify-end">
             <button
               type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              class="border border-gray-200 text-gray-700 text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-gray-900 transition-colors duration-150 font-sans font-medium"
               @click="closeRejectModal"
             >
               Cancel

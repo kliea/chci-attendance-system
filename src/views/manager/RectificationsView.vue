@@ -1,646 +1,470 @@
 <template>
-  <div class="max-w-6xl">
-    <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
+    <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
       <div>
-        <h1
-          class="font-display font-light text-xl tracking-wide text-anito-black"
-        >
-          Rectifications
-        </h1>
-        <p
-          class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed"
-        >
+        <p class="text-gray-600 text-sm mt-2 leading-relaxed">
           Review and approve employee rectification requests.
         </p>
       </div>
       <div class="flex gap-2 flex-wrap">
         <button
           type="button"
-          :class="[
-            'text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 rounded font-sans font-medium transition-colors duration-150',
+          class="px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+          :class="
             activeTab === 'pending'
-              ? 'bg-anito-black text-white'
-              : 'border border-anito-gray-light text-anito-black hover:border-anito-black',
-          ]"
+              ? 'bg-[#003777] text-white'
+              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+          "
           @click="activeTab = 'pending'"
         >
           Pending ({{ pendingCount }})
         </button>
         <button
           type="button"
-          :class="[
-            'text-[10px] tracking-[0.2em] uppercase px-4 py-2.5 rounded font-sans font-medium transition-colors duration-150',
+          class="px-4 py-2.5 text-sm font-medium rounded-lg transition-colors"
+          :class="
             activeTab === 'all'
-              ? 'bg-anito-black text-white'
-              : 'border border-anito-gray-light text-anito-black hover:border-anito-black',
-          ]"
+              ? 'bg-[#003777] text-white'
+              : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+          "
           @click="activeTab = 'all'"
         >
           All Requests
         </button>
       </div>
-    </header>
+    </div>
 
-    <!-- Bulk Actions Header -->
+    <!-- Bulk Actions Bar -->
     <div
       v-if="activeTab === 'pending' && pendingRequests.length > 0"
-      class="flex items-center justify-between mb-4 p-3 bg-anito-gray-light/30 rounded-lg"
+      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between"
     >
-      <div class="flex items-center gap-3">
-        <label class="flex items-center gap-2 cursor-pointer">
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
             :checked="allSelected"
             @change="toggleSelectAll"
-            class="w-4 h-4 rounded-full border-2 border-anito-gray text-anito-blue-mid focus:ring-2 focus:ring-anito-blue-mid focus:ring-offset-2"
+            class="w-4 h-4 border border-gray-300 rounded text-[#003777]"
           />
-          <span class="text-sm font-sans text-anito-black">Select All</span>
+          <span class="text-sm font-medium text-gray-900">Select All</span>
         </label>
-        <span
-          v-if="selectedRequests.length > 0"
-          class="text-sm font-sans text-anito-gray"
-        >
+        <span v-if="selectedRequests.length > 0" class="text-sm text-gray-600">
           {{ selectedRequests.length }} selected
         </span>
       </div>
       <div v-if="selectedRequests.length > 0" class="flex gap-2">
         <button
           type="button"
-          class="bg-green-600 text-white text-xs font-medium px-4 py-2 rounded hover:bg-green-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="processing === 'bulk'"
           @click="openBulkConfirm('approve')"
         >
-          <svg
-            v-if="processing !== 'bulk'"
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            ></path>
+          <svg v-if="processing !== 'bulk'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          <svg
-            v-else
-            class="w-4 h-4 animate-spin"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 12v8m0-8l6 6m-6-6v8m0-8l6 6M12 12v8m0-8l6 6m-6-6v8m0-8l6 6m-6-6v8"
-            ></path>
+          <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416" />
           </svg>
-          {{
-            processing === "bulk"
-              ? "Processing…"
-              : `Approve Selected (${selectedRequests.length})`
-          }}
+          Approve ({{ selectedRequests.length }})
         </button>
         <button
           type="button"
-          class="bg-red-600 text-white text-xs font-medium px-4 py-2 rounded hover:bg-red-700 transition-colors duration-200 font-sans flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="processing === 'bulk'"
           @click="openBulkConfirm('reject')"
         >
-          <svg
-            v-if="processing !== 'bulk'"
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
+          <svg v-if="processing !== 'bulk'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <svg
-            v-else
-            class="w-4 h-4 animate-spin"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 12v8m0-8l6 6m-6-6v8m0-8l6 6M12 12v8m0-8l6 6m-6-6v8m0-8l6 6m-6-6v8"
-            ></path>
+          <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416" />
           </svg>
-          {{
-            processing === "bulk"
-              ? "Processing…"
-              : `Reject Selected (${selectedRequests.length})`
-          }}
+          Reject ({{ selectedRequests.length }})
         </button>
       </div>
     </div>
 
-    <!-- Pending Requests -->
-    <section
-      v-if="activeTab === 'pending'"
-      class="rounded border border-anito-gray-light overflow-hidden mb-8"
-    >
-      <h2
-        class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium px-4 py-3 border-b border-anito-gray-light bg-white"
-      >
-        Pending Requests ({{ pendingCount }}) — oldest first
-      </h2>
-      <div v-if="loading" class="p-8">
-        <LoadingBar />
+    <!-- Pending Requests Section -->
+    <section v-if="activeTab === 'pending'" class="rounded-lg border border-gray-200 bg-white overflow-hidden mb-8">
+      <div class="px-8 py-6 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-900">
+          Pending Requests ({{ pendingCount }})
+        </h2>
+        <p class="text-sm text-gray-600 mt-1">Oldest requests first</p>
       </div>
-      <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
-      <div
-        v-else-if="!pendingRequests.length"
-        class="p-8 text-center text-anito-gray text-sm font-sans font-light"
-      >
-        No pending rectification requests.
+
+      <div v-if="loading" class="p-12 text-center">
+        <div class="inline-block">
+          <div class="w-8 h-8 border-4 border-gray-200 border-t-[#003777] rounded-full animate-spin"></div>
+        </div>
       </div>
-      <div v-else class="divide-y divide-anito-gray-light">
+      <div v-else-if="error" class="p-6">
+        <div class="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+          {{ error }}
+        </div>
+      </div>
+      <div v-else-if="!pendingRequests.length" class="p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="text-gray-900 font-medium text-sm mt-4">No pending requests</h3>
+        <p class="text-gray-600 text-sm mt-1">All rectification requests have been reviewed.</p>
+      </div>
+      <div v-else class="divide-y divide-gray-200">
         <div
           v-for="request in paginatedPendingRequests"
           :key="request.id"
-          class="bg-white hover:shadow-md transition-all duration-200 border-b border-anito-gray-light last:border-b-0"
+          class="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between gap-4"
         >
-          <!-- Compact View -->
-          <div class="p-3">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3 flex-1">
-                <label class="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    :checked="selectedRequests.includes(request.id)"
-                    @change="toggleRequestSelection(request.id)"
-                    class="w-3 h-3 rounded-full border-2 border-anito-gray text-anito-blue-mid focus:ring-2 focus:ring-anito-blue-mid focus:ring-offset-2"
-                  />
-                </label>
-                <div
-                  class="cursor-pointer flex-1 flex items-center gap-3"
-                  @click="openDetailModal(request)"
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <input
+              type="checkbox"
+              :checked="selectedRequests.includes(request.id)"
+              @change="toggleRequestSelection(request.id)"
+              class="w-4 h-4 border border-gray-300 rounded text-[#003777] cursor-pointer"
+            />
+            <div
+              class="flex-1 cursor-pointer min-w-0"
+              @click="openDetailModal(request)"
+            >
+              <div class="flex items-center gap-2 mb-2">
+                <span
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                  :class="
+                    request.requested_in
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-blue-100 text-blue-800'
+                  "
                 >
-                  <span
-                    class="text-xs font-medium px-1.5 py-0.5 rounded-full w-20 text-center"
-                    :class="
-                      request.requested_in
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-blue-100 text-blue-800'
-                    "
-                  >
-                    {{ request.requested_in ? "Time In" : "Time Out" }}
-                  </span>
-                  <div>
-                    <h3
-                      class="font-sans font-medium text-anito-black text-xs line-clamp-1"
-                    >
-                      {{ request.reason }}
-                    </h3>
-                    <div
-                      class="flex items-center gap-3 text-xs text-anito-gray mt-1"
-                    >
-                      <span>{{ getRequesterName(request.requester) }}</span>
-                      <span>{{ formatDate(request.date) }}</span>
-                    </div>
-                  </div>
-                </div>
+                  {{ request.requested_in ? "Time In" : "Time Out" }}
+                </span>
+                <p class="text-sm font-medium text-gray-900 line-clamp-1">
+                  {{ request.reason }}
+                </p>
               </div>
-              <div class="flex items-center gap-2">
-                <button
-                  type="button"
-                  class="bg-green-600 text-white text-xs font-medium px-3 py-1.5 rounded hover:bg-green-700 transition-colors duration-200 font-sans disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  :disabled="processing === request.id || processing === 'bulk'"
-                  @click.stop="approveRequest(request)"
-                >
-                  <svg
-                    v-if="processing !== request.id"
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    ></path>
-                  </svg>
-                  <svg
-                    v-else
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke-width="2"
-                      stroke-dasharray="31.416"
-                      stroke-dashoffset="31.416"
-                      class="animate-spin"
-                      style="transform-origin: center"
-                    ></circle>
-                  </svg>
-                  {{ processing === request.id ? "…" : "Approve" }}
-                </button>
-                <button
-                  type="button"
-                  class="bg-red-600 text-white text-xs font-medium px-3 py-1.5 rounded hover:bg-red-700 transition-colors duration-200 font-sans disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  :disabled="processing === request.id || processing === 'bulk'"
-                  @click.stop="openRejectModal(request)"
-                >
-                  <svg
-                    v-if="processing !== request.id"
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    ></path>
-                  </svg>
-                  <svg
-                    v-else
-                    class="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke-width="2"
-                      stroke-dasharray="31.416"
-                      stroke-dashoffset="31.416"
-                      class="animate-spin"
-                      style="transform-origin: center"
-                    ></circle>
-                  </svg>
-                  {{ processing === request.id ? "…" : "Reject" }}
-                </button>
-                <button
-                  type="button"
-                  class="text-anito-blue-mid text-xs font-sans font-medium hover:underline"
-                  @click.stop="openDetailModal(request)"
-                >
-                  View
-                </button>
+              <div class="flex items-center gap-3 text-xs text-gray-600">
+                <span>{{ getRequesterName(request.requester) }}</span>
+                <span>{{ formatDate(request.date) }}</span>
               </div>
             </div>
           </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="processing === request.id || processing === 'bulk'"
+              @click.stop="approveRequest(request)"
+            >
+              <svg v-if="processing !== request.id" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <svg v-else class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416" />
+              </svg>
+              {{ processing === request.id ? "…" : "Approve" }}
+            </button>
+            <button
+              type="button"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="processing === request.id || processing === 'bulk'"
+              @click.stop="openRejectModal(request)"
+            >
+              <svg v-if="processing !== request.id" class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <svg v-else class="w-3 h-3 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416" />
+              </svg>
+              {{ processing === request.id ? "…" : "Reject" }}
+            </button>
+            <button
+              type="button"
+              class="px-3 py-1.5 text-xs font-medium text-[#003777] hover:text-[#002555] transition-colors"
+              @click.stop="openDetailModal(request)"
+            >
+              View
+            </button>
+          </div>
         </div>
-        <div
-          v-if="pendingRequests.length > pageSize"
-          class="p-4 border-t border-anito-gray-light bg-white flex flex-wrap items-center justify-between gap-3"
-        >
-          <p class="text-anito-gray text-sm font-sans font-light">
+
+        <!-- Pagination -->
+        <div v-if="pendingRequests.length > pageSize" class="p-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">
             Showing {{ (pendingPage - 1) * pageSize + 1 }}–{{ Math.min(pendingPage * pageSize, pendingRequests.length) }} of {{ pendingRequests.length }}
           </p>
-          <div class="flex items-center gap-3">
-            <label class="flex items-center gap-2 text-sm font-sans text-anito-gray">
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 text-sm text-gray-600">
               Per page
               <select
                 :value="pageSize"
-                class="border border-anito-gray-light rounded px-2 py-1.5 text-anito-black text-sm focus:border-anito-blue-mid focus:outline-none"
+                class="border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-900 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors"
                 @change="onPendingPageSizeChange($event)"
               >
                 <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
               </select>
             </label>
             <div class="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
+                class="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="pendingPage <= 1"
                 @click="pendingPage--"
               >
                 Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
+              </button>
+              <button
+                type="button"
+                class="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="pendingPage >= totalPendingPages"
                 @click="pendingPage++"
               >
                 Next
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- All Requests -->
-    <section
-      v-if="activeTab === 'all'"
-      class="rounded border border-anito-gray-light overflow-hidden"
-    >
-      <div
-        class="flex flex-col gap-2 px-4 py-3 border-b border-anito-gray-light bg-white"
-      >
-        <h2
-          class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium"
-        >
-          All Requests ({{ allRequests.length }}) — oldest first
+    <!-- All Requests Section -->
+    <section v-if="activeTab === 'all'" class="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      <div class="px-8 py-6 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          All Requests ({{ allRequests.length }})
         </h2>
-        <div class="flex flex-wrap gap-2 text-xs font-sans">
+        <div class="flex flex-wrap gap-2">
           <button
+            v-for="filter in [
+              { value: 'all', label: 'All', count: allRequests.length },
+              { value: 'pending', label: 'Pending', count: pendingCount },
+              { value: 'approved', label: 'Approved', count: approvedCount },
+              { value: 'rejected', label: 'Rejected', count: rejectedCount },
+            ]"
+            :key="filter.value"
             type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors"
             :class="
-              allStatusFilter === 'all'
-                ? 'bg-anito-black text-white border-anito-black'
-                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+              allStatusFilter === filter.value
+                ? filter.value === 'approved'
+                  ? 'bg-green-100 text-green-800'
+                  : filter.value === 'rejected'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-[#003777] text-white'
+                : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
             "
-            @click="allStatusFilter = 'all'"
+            @click="allStatusFilter = filter.value"
           >
-            All
-            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
-              {{ allRequests.length }}
-            </span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
-            :class="
-              allStatusFilter === 'pending'
-                ? 'bg-anito-black text-white border-anito-black'
-                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
-            "
-            @click="allStatusFilter = 'pending'"
-          >
-            Pending
-            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
-              {{ pendingCount }}
-            </span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
-            :class="
-              allStatusFilter === 'approved'
-                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500'
-                : 'border-anito-gray-light text-anito-black hover:border-emerald-500'
-            "
-            @click="allStatusFilter = 'approved'"
-          >
-            Approved
-            <span class="text-[10px] px-1 rounded-full bg-emerald-100 text-emerald-700">
-              {{ approvedCount }}
-            </span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
-            :class="
-              allStatusFilter === 'rejected'
-                ? 'bg-red-500/10 text-red-700 border-red-500'
-                : 'border-anito-gray-light text-anito-black hover-border-red-500'
-            "
-            @click="allStatusFilter = 'rejected'"
-          >
-            Rejected
-            <span class="text-[10px] px-1 rounded-full bg-red-100 text-red-700">
-              {{ rejectedCount }}
+            {{ filter.label }}
+            <span
+              class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-semibold"
+              :class="
+                allStatusFilter === filter.value
+                  ? 'bg-white/30'
+                  : 'bg-gray-200 text-gray-700'
+              "
+            >
+              {{ filter.count }}
             </span>
           </button>
         </div>
       </div>
-      <div v-if="loading" class="p-8">
-        <LoadingBar />
+
+      <div v-if="loading" class="p-12 text-center">
+        <div class="inline-block">
+          <div class="w-8 h-8 border-4 border-gray-200 border-t-[#003777] rounded-full animate-spin"></div>
+        </div>
       </div>
-      <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
-      <div
-        v-else-if="!allRequests.length"
-        class="p-8 text-center text-anito-gray text-sm font-sans font-light"
-      >
-        No rectification requests found.
+      <div v-else-if="error" class="p-6">
+        <div class="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+          {{ error }}
+        </div>
+      </div>
+      <div v-else-if="!allRequests.length" class="p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="text-gray-900 font-medium text-sm mt-4">No requests found</h3>
       </div>
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-          <thead class="bg-anito-black">
+        <table class="w-full">
+          <thead class="bg-[#003777]">
             <tr>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Employee
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Date
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Reason
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Status
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Reviewed By
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Actions
-              </th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Employee</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Date</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Reason</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Status</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Reviewed By</th>
+              <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="request in paginatedAllRequests"
               :key="request.id"
-              class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
+              class="hover:bg-gray-50 transition-colors"
             >
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">
                 {{ getRequesterName(request.requester) }}
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-6 py-4 text-sm text-gray-600">
                 {{ formatDate(request.date) }}
               </td>
-              <td
-                class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate"
-                :title="request.reason"
-              >
+              <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" :title="request.reason">
                 {{ request.reason }}
               </td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4">
                 <span
-                  :class="getStatusClass(request.status)"
-                  class="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded font-sans font-medium"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                  :class="
+                    request.status === 'approved'
+                      ? 'bg-green-100 text-green-800'
+                      : request.status === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800'
+                  "
                 >
                   {{ request.status }}
                 </span>
               </td>
-              <td class="px-4 py-3 text-sm font-sans text-anito-gray">
+              <td class="px-6 py-4 text-sm text-gray-600">
                 {{ request.reviewer?.full_name ?? "—" }}
               </td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4 text-center">
                 <button
                   type="button"
-                  class="text-anito-blue-mid text-xs font-sans font-medium hover:underline"
+                  class="text-[#003777] text-xs font-medium hover:text-[#002555] transition-colors"
                   @click="openDetailModal(request)"
                 >
                   {{ request.status === 'pending' ? 'Review' : 'View' }}
                 </button>
-                <span
-                  v-if="request.status !== 'pending'"
-                  class="text-anito-gray text-xs font-sans font-light ml-2"
-                >
-                  {{ formatDateTime(request.reviewed_at) }}
-                </span>
-                <span
-                  v-else
-                  class="text-anito-gray text-xs font-sans font-light"
-                >
+                <span v-if="request.reviewed_at" class="text-gray-500 text-xs ml-2">
                   {{ formatDateTime(request.reviewed_at) }}
                 </span>
               </td>
             </tr>
           </tbody>
         </table>
-        <div
-          v-if="allRequests.length > pageSize"
-          class="p-4 border-t border-anito-gray-light bg-white flex flex-wrap items-center justify-between gap-3"
-        >
-          <p class="text-anito-gray text-sm font-sans font-light">
+
+        <!-- Pagination -->
+        <div v-if="allRequests.length > pageSize" class="p-4 border-t border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-gray-600">
             Showing {{ (allRequestsPage - 1) * pageSize + 1 }}–{{ Math.min(allRequestsPage * pageSize, allRequests.length) }} of {{ allRequests.length }}
           </p>
-          <div class="flex items-center gap-3">
-            <label class="flex items-center gap-2 text-sm font-sans text-anito-gray">
+          <div class="flex items-center gap-4">
+            <label class="flex items-center gap-2 text-sm text-gray-600">
               Per page
               <select
                 :value="pageSize"
-                class="border border-anito-gray-light rounded px-2 py-1.5 text-anito-black text-sm focus:border-anito-blue-mid focus:outline-none"
+                class="border border-gray-300 rounded px-2 py-1.5 text-sm text-gray-900 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors"
                 @change="onAllPageSizeChange($event)"
               >
                 <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
               </select>
             </label>
             <div class="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
+                class="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="allRequestsPage <= 1"
                 @click="allRequestsPage--"
               >
                 Previous
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
+              </button>
+              <button
+                type="button"
+                class="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :disabled="allRequestsPage >= totalAllRequestsPages"
                 @click="allRequestsPage++"
               >
                 Next
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Request detail modal -->
+    <!-- Detail Modal -->
     <div
       v-if="detailModalRequest"
-      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20"
       @click.self="closeDetailModal"
     >
-      <div
-        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-auto border border-anito-gray-light overflow-hidden"
-      >
-        <div class="px-6 py-4 border-b border-anito-gray-light flex items-center justify-between">
-          <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
-            Rectification request
-          </h2>
+      <div class="bg-white rounded-lg shadow-lg max-w-lg w-full overflow-hidden">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Rectification Request</h2>
           <button
             type="button"
-            class="text-anito-gray hover:text-anito-black transition-colors"
+            class="text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Close"
             @click="closeDetailModal"
           >
-            ✕
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
-        <div class="p-6 space-y-4">
+
+        <!-- Modal Content -->
+        <div class="p-8 space-y-6">
           <div>
-            <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Employee</p>
-            <p class="text-sm font-sans text-anito-black">{{ getRequesterName(detailModalRequest.requester) }}</p>
+            <p class="text-xs uppercase tracking-wide text-gray-600 font-medium mb-2">Employee</p>
+            <p class="text-sm font-medium text-gray-900">{{ getRequesterName(detailModalRequest.requester) }}</p>
           </div>
           <div>
-            <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Date</p>
-            <p class="text-sm font-sans text-anito-black">{{ formatDate(detailModalRequest.date) }}</p>
+            <p class="text-xs uppercase tracking-wide text-gray-600 font-medium mb-2">Date</p>
+            <p class="text-sm text-gray-900">{{ formatDate(detailModalRequest.date) }}</p>
           </div>
           <div>
-            <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Reason</p>
-            <p class="text-sm font-sans text-anito-black">{{ detailModalRequest.reason }}</p>
+            <p class="text-xs uppercase tracking-wide text-gray-600 font-medium mb-2">Reason</p>
+            <p class="text-sm text-gray-900">{{ detailModalRequest.reason }}</p>
           </div>
-          <div
-            v-if="detailModalRequest.requested_in || detailModalRequest.requested_out"
-            class="flex flex-wrap gap-6"
-          >
+          <div v-if="detailModalRequest.requested_in || detailModalRequest.requested_out" class="flex flex-wrap gap-6">
             <div v-if="detailModalRequest.requested_in">
-              <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Requested time in</p>
-              <p class="text-sm font-sans text-anito-black">{{ detailModalRequest.requested_in }}</p>
+              <p class="text-xs uppercase tracking-wide text-gray-600 font-medium mb-2">Requested Time In</p>
+              <p class="text-sm font-medium text-gray-900">{{ detailModalRequest.requested_in }}</p>
             </div>
             <div v-if="detailModalRequest.requested_out">
-              <p class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-1">Requested time out</p>
-              <p class="text-sm font-sans text-anito-black">{{ detailModalRequest.requested_out }}</p>
+              <p class="text-xs uppercase tracking-wide text-gray-600 font-medium mb-2">Requested Time Out</p>
+              <p class="text-sm font-medium text-gray-900">{{ detailModalRequest.requested_out }}</p>
             </div>
           </div>
-          <div class="text-xs text-anito-gray">
+          <div class="text-xs text-gray-600">
             Requested {{ formatDateTime(detailModalRequest.created_at) }}
           </div>
-          <div v-if="detailModalRequest.status !== 'pending'" class="flex gap-2 text-xs text-anito-gray">
+          <div v-if="detailModalRequest.status !== 'pending'" class="flex items-center gap-2 text-xs">
             <span
-              :class="getStatusClass(detailModalRequest.status)"
-              class="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded font-sans font-medium"
+              class="inline-flex items-center px-3 py-1 rounded-full font-semibold"
+              :class="
+                detailModalRequest.status === 'approved'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+              "
             >
               {{ detailModalRequest.status }}
             </span>
-            <span v-if="detailModalRequest.reviewed_at">
+            <span v-if="detailModalRequest.reviewed_at" class="text-gray-600">
               Reviewed {{ formatDateTime(detailModalRequest.reviewed_at) }}
               <span v-if="detailModalRequest.reviewer"> by {{ detailModalRequest.reviewer.full_name }}</span>
             </span>
           </div>
         </div>
-        <div
-          v-if="detailModalRequest.status === 'pending'"
-          class="px-6 py-4 border-t border-anito-gray-light flex gap-2 justify-end"
-        >
+
+        <!-- Modal Actions -->
+        <div v-if="detailModalRequest.status === 'pending'" class="px-8 py-6 border-t border-gray-200 flex gap-3 justify-end">
           <button
             type="button"
-            class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black font-sans font-medium"
+            class="px-4 py-2 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
             @click="closeDetailModal"
           >
             Cancel
           </button>
           <button
             type="button"
-            class="bg-red-600 text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-red-700 font-sans font-medium disabled:opacity-50"
+            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="processing === detailModalRequest.id || processing === 'bulk'"
             @click="openRejectModal(detailModalRequest); closeDetailModal()"
           >
@@ -648,11 +472,11 @@
           </button>
           <button
             type="button"
-            class="bg-green-600 text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-green-700 font-sans font-medium disabled:opacity-50"
+            class="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="processing === detailModalRequest.id || processing === 'bulk'"
             @click="handleApproveFromModal"
           >
-            {{ processing === detailModalRequest.id ? '…' : 'Approve' }}
+            {{ processing === detailModalRequest.id ? "Approving…" : "Approve" }}
           </button>
         </div>
       </div>
@@ -661,86 +485,106 @@
     <!-- Reject Modal -->
     <div
       v-if="showRejectModal"
-      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20"
       @click.self="closeRejectModal"
     >
-      <div
-        class="bg-anito-white rounded-lg shadow-xl max-w-md w-full mx-auto mt-24 p-8"
-      >
-        <div class="mb-6 flex items-center justify-between">
-          <h2
-            class="font-display font-light text-2xl tracking-wide text-anito-black mb-1"
-          >
-            Reject Request
-          </h2>
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Reject Request</h2>
           <button
             type="button"
-            class="text-anito-gray hover:text-anito-black transition-colors duration-150"
+            class="text-gray-500 hover:text-gray-700 transition-colors"
             aria-label="Close"
             @click="closeRejectModal"
           >
-            ✕
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <div v-if="selectedRequest" class="mb-4">
-          <p class="text-anito-gray text-sm font-sans font-light mb-2">
-            Request from
-            <strong class="text-anito-black">{{
-              getRequesterName(selectedRequest.requester)
-            }}</strong>
-            for
-            <strong class="text-anito-black">{{
-              formatDate(selectedRequest.date)
-            }}</strong>
-          </p>
-          <p class="text-anito-black text-sm font-sans font-medium">
-            {{ selectedRequest.reason }}
-          </p>
-        </div>
-
-        <form class="space-y-4" @submit.prevent="rejectRequest">
-          <div v-if="rejectError" class="text-red-600 text-sm">
-            {{ rejectError }}
+        <!-- Modal Content -->
+        <div class="p-8">
+          <div v-if="selectedRequest" class="mb-6">
+            <p class="text-sm text-gray-600 mb-2">
+              Request from
+              <strong class="text-gray-900">{{ getRequesterName(selectedRequest.requester) }}</strong>
+              for
+              <strong class="text-gray-900">{{ formatDate(selectedRequest.date) }}</strong>
+            </p>
+            <p class="text-sm font-medium text-gray-900">{{ selectedRequest.reason }}</p>
           </div>
 
-          <div class="flex gap-2 pt-2">
+          <form class="space-y-4" @submit.prevent="rejectRequest">
+            <div v-if="rejectError" class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+              {{ rejectError }}
+            </div>
+
+            <div class="flex gap-3">
+              <button
+                type="button"
+                class="flex-1 px-4 py-2 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                @click="closeRejectModal"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="flex-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="rejectSubmitting"
+              >
+                {{ rejectSubmitting ? "Rejecting…" : "Reject Request" }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Confirmation Modal -->
+    <div
+      v-if="showBulkConfirm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20"
+      @click.self="showBulkConfirm = false"
+    >
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-900">Confirm Bulk Action</h2>
+        </div>
+
+        <!-- Modal Content -->
+        <div class="p-8">
+          <p class="text-sm text-gray-600 mb-6">
+            You are about to <strong>{{ bulkConfirmAction === 'approve' ? 'approve' : 'reject' }}</strong> {{ selectedRequests.length }} request(s). This action cannot be undone.
+          </p>
+
+          <div class="flex gap-3">
             <button
               type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
-              @click="closeRejectModal"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              @click="showBulkConfirm = false"
             >
               Cancel
             </button>
             <button
-              type="submit"
-              class="bg-red-600 text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-red-700 transition-colors duration-150 font-sans font-medium disabled:opacity-50"
-              :disabled="rejectSubmitting"
+              type="button"
+              :class="[
+                'flex-1 px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
+                bulkConfirmAction === 'approve'
+                  ? 'bg-green-600 hover:bg-green-700'
+                  : 'bg-red-600 hover:bg-red-700'
+              ]"
+              :disabled="processing === 'bulk'"
+              @click="confirmBulkAction"
             >
-              {{ rejectSubmitting ? "Rejecting…" : "Reject Request" }}
+              Confirm
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
-
-    <!-- Bulk action confirmation -->
-    <Dialog v-model="showBulkConfirm" max-width="max-w-md">
-      <template #header>
-        <h2 class="font-display font-light text-xl tracking-wide text-anito-black">
-          Confirm Bulk Action
-        </h2>
-      </template>
-      <p class="text-anito-gray font-sans font-light mb-6">
-        You are about to {{ bulkConfirmAction === 'approve' ? 'approve' : 'reject' }} {{ selectedRequests.length }} request(s). This cannot be undone.
-      </p>
-      <div class="flex gap-2 justify-end">
-        <Button variant="secondary" @click="showBulkConfirm = false">Cancel</Button>
-        <Button variant="primary" @click="confirmBulkAction">
-          Confirm
-        </Button>
-      </div>
-    </Dialog>
   </div>
 </template>
 
@@ -749,8 +593,6 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
 import { useFormatters } from "@/composables/useFormatters.js";
-import LoadingBar from "@/components/ui/LoadingBar.vue";
-import { Button, Dialog } from "@/components/ui";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
@@ -765,7 +607,7 @@ const rejectError = ref("");
 const detailModalRequest = ref(null);
 const selectedRequests = ref([]);
 const showBulkConfirm = ref(false);
-const bulkConfirmAction = ref('approve');
+const bulkConfirmAction = ref("approve");
 
 const pageSizeOptions = [5, 10, 50, 100];
 const pageSize = ref(10);
@@ -785,10 +627,9 @@ const rejectedCount = computed(() => rejectedRequests.value.length);
 const allStatusFilter = ref("all");
 const filteredAllRequests = computed(() => {
   if (allStatusFilter.value === "all") return allRequests.value;
-  return allRequests.value.filter(
-    (r) => r.status === allStatusFilter.value,
-  );
+  return allRequests.value.filter((r) => r.status === allStatusFilter.value);
 });
+
 const totalPendingPages = computed(() =>
   Math.max(1, Math.ceil(pendingRequests.value.length / pageSize.value)),
 );
@@ -798,6 +639,7 @@ const paginatedPendingRequests = computed(() => {
   const from = (pendingPage.value - 1) * size;
   return list.slice(from, from + size);
 });
+
 const totalAllRequestsPages = computed(() =>
   Math.max(1, Math.ceil(filteredAllRequests.value.length / pageSize.value)),
 );
@@ -807,6 +649,7 @@ const paginatedAllRequests = computed(() => {
   const from = (allRequestsPage.value - 1) * size;
   return list.slice(from, from + size);
 });
+
 const allSelected = computed(() => {
   return (
     pendingRequests.value.length > 0 &&
@@ -892,16 +735,11 @@ async function confirmBulkAction() {
 
 async function approveRequest(request) {
   processing.value = request.id;
-  const result = await rectificationsStore.updateRequestStatus(
+  await rectificationsStore.updateRequestStatus(
     request.id,
     "approved",
     authStore.profile?.id,
   );
-  if (!result.ok) {
-    if (import.meta.env.DEV) {
-      console.error("Failed to approve request:", result.error);
-    }
-  }
   processing.value = null;
 }
 
@@ -937,5 +775,4 @@ async function rejectRequest() {
 
   rejectSubmitting.value = false;
 }
-
 </script>

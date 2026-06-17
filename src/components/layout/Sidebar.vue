@@ -1,98 +1,93 @@
 <template>
-  <aside class="w-52 shrink-0 bg-anito-black flex flex-col">
-    <div class="p-4 border-b border-[#1e2228]">
-      <span
-        class="font-display font-light text-2xl tracking-[0.22em] uppercase text-white"
-      >
-        CHCI<span
-          class="inline-block w-1.5 h-1.5 rounded-full bg-anito-blue-mid mb-0.5 ml-0.5 align-middle"
-        ></span>
-      </span>
-      <p
-        class="text-[10px] tracking-[0.25em] uppercase text-anito-gray mt-1 font-heading font-light"
-      >
-        Attendance Monitoring System
+  <aside class="w-64 h-screen sticky top-0 shrink-0 bg-white flex flex-col border-r border-gray-100 shadow-sm">
+    <!-- Header -->
+    <div class="px-6 py-8 border-b border-gray-100">
+      <div class="flex items-center justify-center mb-4">
+        <img src="@/components/img/logo.png" alt="CHCI Logo" class="h-30 w-35">
+      </div>
+      <p class="text-xs tracking-wide uppercase text-gray-500 mt-3 font-medium letter-spacing-[0.05em] text-center">
+        Attendance System
       </p>
     </div>
-    <nav class="flex-1 p-3 space-y-0.5">
+
+    <!-- Navigation -->
+    <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
       <template v-if="auth.isManager">
-        <router-link
-          v-for="item in managerNav"
-          :key="item.to"
-          :to="item.to"
-          class="nav-link"
-          active-class="nav-link-active"
-        >
-          {{ item.label }}
-        </router-link>
+        <router-link to="/dashboard" class="nav-link" active-class="nav-link-active">Dashboard</router-link>
+        <router-link to="/employees" class="nav-link" active-class="nav-link-active">Employees</router-link>
+        <router-link to="/attendance" class="nav-link" active-class="nav-link-active">Employee DTR</router-link>
+        <router-link to="/import" class="nav-link" active-class="nav-link-active">Import</router-link>
+        <router-link to="/rectifications" class="nav-link" active-class="nav-link-active">Rectifications</router-link>
+        <router-link to="/overtime" class="nav-link" active-class="nav-link-active">Overtime</router-link>
+        <router-link to="/settings" class="nav-link" active-class="nav-link-active">Settings</router-link>
       </template>
       <template v-else>
-        <router-link
-          v-for="item in employeeNav"
-          :key="item.to"
-          :to="item.to"
-          class="nav-link"
-          active-class="nav-link-active"
-        >
-          {{ item.label }}
-        </router-link>
+        <router-link to="/my-attendance" class="nav-link" active-class="nav-link-active">My Attendance</router-link>
+        <router-link to="/rectify" class="nav-link" active-class="nav-link-active">Rectify</router-link>
+        <router-link to="/my-overtime" class="nav-link" active-class="nav-link-active">Overtime</router-link>
       </template>
     </nav>
-    <div class="border-t border-[#1e2228] p-3 mt-auto">
-      <span class="text-[11px] text-anito-gray font-sans font-light">{{
-        auth.fullName
-      }}</span>
+
+    <!-- User Footer -->
+    <div class="border-t border-gray-100 px-6 py-6 mt-auto bg-gray-50">
+      <p class="text-xs text-gray-600 font-medium uppercase tracking-wide">Logged in as</p>
+      <p class="text-sm font-semibold text-gray-900 mt-2">{{ auth.fullName }}</p>
     </div>
   </aside>
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
-import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth.js";
 
 const auth = useAuthStore();
-const route = useRoute();
-
-const managerNav = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/employees", label: "Employees" },
-  { to: "/attendance", label: "Employee DTR" },
-  { to: "/import", label: "Import" },
-  { to: "/rectifications", label: "Rectifications" },
-  { to: "/overtime", label: "Overtime" },
-  { to: "/settings", label: "Settings" },
-];
-
-const employeeNav = [
-  { to: "/my-attendance", label: "My Attendance" },
-  { to: "/rectify", label: "Rectify" },
-  { to: "/my-overtime", label: "Overtime" },
-];
 </script>
 
 <style scoped>
-/* tailwindcss @apply */
-/* stylelint-disable at-rule-no-unknown */
-/* eslint-disable-next-line at-rule-no-unknown */
+/* Navigation Link Base Styles */
 .nav-link {
-  @apply block text-[10px] tracking-[0.18em] uppercase font-sans font-medium px-3 py-2 rounded text-[#6b7280] hover:text-white hover:bg-[#131820] transition-colors duration-150;
-}
-/* eslint-disable-next-line at-rule-no-unknown */
-.nav-link-active {
-  @apply bg-[#131820] text-white;
+  @apply relative flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 transition-all duration-200 ease-out rounded-lg;
   position: relative;
-  padding-left: 1.25rem;
 }
-.nav-link-active::before {
-  content: "";
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0.25rem;
-  height: 0.25rem;
-  border-radius: 9999px;
-  background-color: #3a7cc3;
+
+.nav-link:hover {
+  @apply text-[#003777] bg-blue-50;
+}
+
+/* Active State */
+.nav-link-active {
+  @apply text-white bg-[#003777] shadow-md;
+}
+
+.nav-link-active:hover {
+  @apply bg-[#002555];
+}
+
+/* Indicator Dot */
+.nav-indicator {
+  @apply inline-block w-2 h-2 rounded-full bg-current transition-all duration-200;
+  opacity: 0;
+}
+
+.nav-link-active .nav-indicator {
+  @apply w-2 h-2 bg-white;
+  opacity: 1;
+}
+
+/* Scrollbar styling for navigation */
+nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+nav::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+nav::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 </style>

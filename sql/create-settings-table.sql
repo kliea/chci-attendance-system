@@ -16,6 +16,10 @@ ON CONFLICT (key) DO UPDATE SET
 
 -- Enable RLS
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+-- Drop existing policies if present to avoid duplicate-policy errors
+DROP POLICY IF EXISTS "Public read access to settings" ON public.settings;
+DROP POLICY IF EXISTS "Manager update access to settings" ON public.settings;
+DROP POLICY IF EXISTS "Manager insert access to settings" ON public.settings;
 
 -- RLS Policies: All authenticated users can read settings
 CREATE POLICY "Public read access to settings" ON public.settings
