@@ -1,7 +1,6 @@
 <template>
-  <div class="max-w-4xl">
+    <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
     <header class="mb-6">
-      <h1 class="font-display font-light text-xl tracking-wide text-anito-black">My attendance</h1>
       <p class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed">Your attendance log by day. Filter by month.</p>
     </header>
 

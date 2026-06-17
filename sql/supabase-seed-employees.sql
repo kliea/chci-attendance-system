@@ -3,23 +3,12 @@
 
 insert into public.staff (bio_id, full_name)
 values
-  ('17', 'Lesley'),
-  ('18', 'Ian'),
-  ('19', 'Earl'),
-  ('20', 'Dave'),
-  ('21', 'Maria'),
-  ('22', 'Kristine'),
-  ('23', 'Leo'),
-  ('24', 'Law'),
-  ('25', 'Edrian'),
-  ('26', 'Vicryl'),
-  ('27', 'Pablo'),
-  ('28', 'Abonales'),
-  ('29', 'Corpin'),
-  ('30', 'Isiderio'),
-  ('31', 'Pacana'),
-  ('32', 'Guilbert'),
-  ('33', 'Roberto'),
-  ('34', 'Hanz'),
-  ('37', 'Mark')
+  ('45', 'S.Nacar'),
+  ('46', 'I.Reyes'),
+  ('47', 'Olaybar'),
+  ('48', 'A.Sabuero'),
+  ('49', 'M.Galdiano'),
+  ('50', 'G.Ongco'),
+  ('51', 'K.Octobre'),
+  ('52', 'R.Labastida')
 on conflict (bio_id) do update set full_name = excluded.full_name;

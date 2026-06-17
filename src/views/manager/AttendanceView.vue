@@ -1,28 +1,27 @@
 <template>
-  <div class="max-w-5xl">
+    <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
     <header class="mb-6 flex flex-wrap items-center justify-between gap-4 no-print">
       <div>
-        <h1 class="font-display font-light text-xl tracking-wide text-anito-black">Employee DTR</h1>
-        <p class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed">Per-employee summary and daily logs. Filter by month, view or print DTR.</p>
+        <p class="text-gray-500 text-sm font-sans font-light mt-1.5 leading-relaxed">Per-employee summary and daily logs. Filter by month, view or print DTR.</p>
       </div>
     </header>
 
-    <Card class="no-print">
+    <Card class="no-print bg-[#ffffff] font-sans">
       <CardHeaderFlex>
         <div>
-          <Label for-id="my-month-filter">Month</Label>
+          <Label for-id="my-month-filter" class="text-gray-700 font-sans">Month</Label>
           <Input
             id="my-month-filter"
             v-model="selectedMonth"
             type="month"
-            class="h-10"
+            class="h-10 font-sans focus:border-[#003777] focus:ring-[#003777]"
             @change="applyMonth"
           />
         </div>
         <div class="flex items-end gap-2">
           <Button
             variant="secondary"
-            class="h-10"
+            class="h-10 bg-[#003777] text-white hover:bg-[#003777]/90 font-sans"
             :disabled="attendance.loading"
             @click="applyMonth"
           >
@@ -30,7 +29,7 @@
           </Button>
           <Button
             variant="outline"
-            class="h-10 text-[10px] tracking-[0.15em] uppercase font-sans font-medium"
+            class="h-10 text-[10px] tracking-[0.15em] uppercase font-sans font-medium border-gray-300 text-gray-700 hover:bg-gray-50"
             :disabled="attendance.loading"
             @click="toggleAllTimeTotals"
           >
@@ -39,26 +38,26 @@
         </div>
       </CardHeaderFlex>
 
-      <div v-if="attendance.error" class="p-4 text-red-600 text-sm">{{ attendance.error }}</div>
+      <div v-if="attendance.error" class="p-4 text-[#550000] bg-red-50 text-sm font-sans">{{ attendance.error }}</div>
       <DataTable
         v-else
         :columns="summaryColumns"
         :data="employeeRows"
         :empty="!attendance.loading && !employeeRows.length"
         empty-text="No data for this month. Select a month and apply, or import attendance."
-        :row-class="() => 'cursor-pointer'"
+        :row-class="() => 'cursor-pointer hover:bg-gray-50 font-sans'"
         :row-click="openDetail"
       >
         <template #row="{ row }">
-          <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ row.full_name }}</td>
-          <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ row.bio_id || '—' }}</td>
-          <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ row.program || '—' }}</td>
-          <td class="px-4 py-3 font-mono text-sm text-anito-gray">{{ row.hours }}</td>
-          <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ row.daysPresent }}</td>
+          <td class="px-4 py-3 text-sm font-sans text-gray-900">{{ row.full_name }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-gray-500">{{ row.bio_id || '—' }}</td>
+          <td class="px-4 py-3 text-sm font-sans text-gray-900">{{ row.program || '—' }}</td>
+          <td class="px-4 py-3 font-mono text-sm text-[#003777] font-semibold">{{ row.hours }}</td>
+          <td class="px-4 py-3 text-sm font-sans text-gray-900">{{ row.daysPresent }}</td>
           <td class="px-4 py-3" @click.stop>
             <button
               type="button"
-              class="text-anito-blue-mid text-[10px] tracking-[0.15em] uppercase font-sans font-medium hover:text-anito-blue-deep transition-colors"
+              class="text-[#550000] text-[10px] tracking-[0.15em] uppercase font-sans font-medium hover:text-[#550000]/80 transition-colors"
               @click="openDetail(row)"
             >
               View logs
@@ -71,7 +70,7 @@
     <div class="no-print">
       <Dialog v-model="showDetailModal" max-width="max-w-3xl">
         <template #header>
-          <h2 class="font-display font-light text-lg tracking-wide text-anito-black">
+          <h2 class="font-sans font-light text-lg tracking-wide text-gray-900">
             {{ showAllTimeTotals ? 'Monthly summary' : 'Daily logs' }} — {{ selectedEmployee?.full_name }} ({{ selectedEmployee?.bio_id }})
           </h2>
         </template>
@@ -80,6 +79,7 @@
             <Button
               variant="secondary"
               size="sm"
+              class="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 font-sans"
               :disabled="appendix24TemplateLoading"
               @click="downloadAppendix24FillerTemplate"
             >
@@ -87,6 +87,7 @@
             </Button>
             <PrintDailyLogsButton
               size="sm"
+              class="bg-[#003777] text-white hover:bg-[#003777]/90 font-sans"
               :employee-name="selectedEmployee?.full_name ?? ''"
               :month-label="formatMonthLabel(selectedMonth)"
               :selected-month="selectedMonth"
@@ -95,41 +96,41 @@
             />
           </template>
         </template>
-        <div class="p-4">
+        <div class="p-4 bg-[#ffffff] font-sans">
           <AttendanceDayTable
             v-if="!showAllTimeTotals"
             :day-rows="detailDayRows"
             empty-text="No daily logs for this month."
           />
           <div v-else class="space-y-3">
-            <table class="w-full text-sm text-left border border-anito-gray-light rounded">
-              <thead class="bg-anito-black">
+            <table class="w-full text-sm text-left border border-gray-200 rounded bg-[#ffffff] font-sans">
+              <thead class="bg-[#003777]">
                 <tr>
-                  <th class="px-3 py-2 text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium text-left">
+                  <th class="px-3 py-2 text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium text-left">
                     Month
                   </th>
-                  <th class="px-3 py-2 text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium text-left">
+                  <th class="px-3 py-2 text-white text-[9px] tracking-[0.25em] uppercase font-sans font-medium text-left">
                     Hours rendered
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody class="divide-y divide-gray-100">
                 <tr
                   v-for="row in detailMonthlyRows"
                   :key="row.ym"
-                  class="border-t border-anito-gray-light"
+                  class="border-t border-gray-200 hover:bg-gray-50"
                 >
-                  <td class="px-3 py-2 text-anito-black">
+                  <td class="px-3 py-2 text-gray-900">
                     {{ row.label }}
                   </td>
-                  <td class="px-3 py-2 font-mono text-xs text-anito-gray">
+                  <td class="px-3 py-2 font-mono text-xs text-[#550000] font-semibold">
                     {{ row.hours }}
                   </td>
                 </tr>
                 <tr v-if="!detailMonthlyRows.length">
                   <td
                     colspan="2"
-                    class="px-3 py-2 text-anito-gray text-sm font-sans font-light"
+                    class="px-3 py-2 text-gray-400 text-sm font-sans font-light"
                   >
                     No logs for this employee.
                   </td>
@@ -141,27 +142,27 @@
       </Dialog>
     </div>
 
-    <div id="dtr-print-area" class="hidden print:block p-6">
+    <div id="dtr-print-area" class="hidden print:block p-6 bg-white font-sans">
       <div v-if="printPayload" class="print-content">
-        <h2 class="font-display text-lg font-light mb-2">Employee DTR</h2>
-        <p class="text-sm text-anito-gray mb-4">{{ printPayload.title }}</p>
-        <table v-if="printPayload.type === 'summary'" class="w-full text-sm text-left border border-gray-300">
+        <h2 class="font-sans text-lg font-light mb-2 text-gray-900">Employee DTR</h2>
+        <p class="text-sm text-gray-500 mb-4 font-sans">{{ printPayload.title }}</p>
+        <table v-if="printPayload.type === 'summary'" class="w-full text-sm text-left border border-gray-300 bg-white font-sans">
           <thead>
             <tr class="bg-gray-100">
-              <th class="px-3 py-2 text-left font-medium">Name</th>
-              <th class="px-3 py-2 text-left font-medium">Bio ID</th>
-              <th class="px-3 py-2 text-left font-medium">Program</th>
-              <th class="px-3 py-2 text-left font-medium">Hours</th>
-              <th class="px-3 py-2 text-left font-medium">Days</th>
+              <th class="px-3 py-2 text-left font-medium text-gray-800 font-sans">Name</th>
+              <th class="px-3 py-2 text-left font-medium text-gray-800 font-sans">Bio ID</th>
+              <th class="px-3 py-2 text-left font-medium text-gray-800 font-sans">Program</th>
+              <th class="px-3 py-2 text-left font-medium text-[#003777] font-sans">Hours</th>
+              <th class="px-3 py-2 text-left font-medium text-gray-800 font-sans">Days</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="r in printPayload.rows" :key="r.id" class="border-t border-gray-200">
-              <td class="px-3 py-2">{{ r.full_name }}</td>
-              <td class="px-3 py-2">{{ r.bio_id || '—' }}</td>
-              <td class="px-3 py-2">{{ r.program || '—' }}</td>
-              <td class="px-3 py-2">{{ r.hours }}</td>
-              <td class="px-3 py-2">{{ r.daysPresent }}</td>
+              <td class="px-3 py-2 text-gray-900 font-sans">{{ r.full_name }}</td>
+              <td class="px-3 py-2 text-gray-600 font-mono">{{ r.bio_id || '—' }}</td>
+              <td class="px-3 py-2 text-gray-600 font-sans">{{ r.program || '—' }}</td>
+              <td class="px-3 py-2 font-mono text-[#003777] font-semibold">{{ r.hours }}</td>
+              <td class="px-3 py-2 text-gray-900 font-sans">{{ r.daysPresent }}</td>
             </tr>
           </tbody>
         </table>
@@ -293,11 +294,6 @@ const detailMonthlyRows = computed(() => {
   return rows
 })
 
-const canPrint = computed(() => {
-  if (selectedEmployee.value) return true
-  return employeeRows.value.length > 0
-})
-
 function setDefaultMonth() {
   const now = new Date()
   const y = now.getFullYear()
@@ -314,11 +310,9 @@ function applyMonth() {
 
 function toggleAllTimeTotals() {
   if (showAllTimeTotals.value) {
-    // Go back to month-based view
     showAllTimeTotals.value = false
     applyMonth()
   } else {
-    // Show all-time totals: fetch all logs without date filter
     showAllTimeTotals.value = true
     attendance.fetchAttendance({})
   }
@@ -353,20 +347,6 @@ async function downloadAppendix24FillerTemplate() {
   }
 }
 
-function printCurrent() {
-  if (selectedEmployee.value) {
-    return
-  }
-  printPayload.value = {
-    type: 'summary',
-    title: `Employee DTR — ${monthRange.value.dateFrom} to ${monthRange.value.dateTo}`,
-    rows: employeeRows.value,
-  }
-  setTimeout(() => {
-    window.print()
-  }, 100)
-}
-
 onMounted(async () => {
   await Promise.all([staff.fetchStaff(), employees.fetchEmployees()])
   setDefaultMonth()
@@ -375,6 +355,16 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+:deep(th) {
+  background-color: #003777 !important;
+  color: #ffffff !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+}
+
+:deep(td) {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+}
+
 @media print {
   .no-print {
     display: none !important;

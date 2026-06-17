@@ -1,51 +1,53 @@
 <template>
-  <div class="px-8 py-10">
-    <h2 class="font-display font-light text-xl tracking-wide text-anito-black mb-8">Today's overview</h2>
+  <div class="px-8 py-10 bg-[#ffffff] font-sans antialiased">
+    <h2 class="font-sans font-semibold text-xl tracking-wide text-gray-900 mb-8">Today's overview</h2>
 
-    <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-3 gap-4 mb-6 font-sans font-semibold">
       <StatCard label="On time" :value="stats.onTime" highlight />
       <StatCard label="Late" :value="stats.late" warn />
       <StatCard label="Absent" :value="stats.absent" danger />
     </div>
 
-    <Card>
+    <Card class="bg-[#ffffff] font-sans font-semibold">
       <CardHeaderFlex>
         <div>
-          <Label for-id="dashboard-date">Date</Label>
+          <Label for-id="dashboard-date" class="text-gray-700 font-sans font-semibold">Date</Label>
           <Input
             id="dashboard-date"
             v-model="selectedDate"
             type="date"
+            class="font-sans font-semibold focus:border-[#003777] focus:ring-[#003777]"
             @change="loadDay"
           />
         </div>
-        <Button variant="secondary" :disabled="attendance.loading" @click="loadDay">
+        <Button variant="secondary" class="bg-[#003777] text-white hover:bg-[#003777]/90 font-sans font-semibold" :disabled="attendance.loading" @click="loadDay">
           {{ attendance.loading ? 'Loading…' : 'Apply' }}
         </Button>
       </CardHeaderFlex>
 
-      <CardHeader>Daily attendance</CardHeader>
-      <div v-if="attendance.error" class="p-4 text-red-600 text-sm">{{ attendance.error }}</div>
+      <CardHeader class="font-sans font-semibold text-gray-900">Daily attendance</CardHeader>
+      <div v-if="attendance.error" class="p-4 text-[#550000] bg-red-50 text-sm font-sans font-semibold">{{ attendance.error }}</div>
       <DataTable
         v-else
         :columns="tableColumns"
         :data="paginatedList"
         :empty="!attendance.loading && !staff.loading && !fullDayList.length"
         empty-text="No staff. Add staff first, or select a date and apply."
+        :row-class="() => 'font-sans font-semibold hover:bg-gray-50'"
       >
         <template #row="{ row }">
-          <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ row.full_name }}</td>
-          <td class="px-4 py-3 text-sm font-sans text-anito-black">{{ formatDate(row.date) }}</td>
-          <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ formatTime(row.time_in) }}</td>
-          <td class="px-4 py-3 font-mono text-xs text-anito-gray">{{ formatTime(row.time_out) }}</td>
+          <td class="px-4 py-3 text-sm font-sans text-gray-900 font-semibold">{{ row.full_name }}</td>
+          <td class="px-4 py-3 text-sm font-sans text-gray-900 font-semibold">{{ formatDate(row.date) }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-gray-500 font-semibold">{{ formatTime(row.time_in) }}</td>
+          <td class="px-4 py-3 font-mono text-xs text-gray-500 font-semibold">{{ formatTime(row.time_out) }}</td>
           <td class="px-4 py-3">
             <span
               :class="
                 getTimeInStatus(row) === 'Absent'
-                  ? 'text-[9px] tracking-[0.1em] uppercase font-sans font-medium px-2.5 py-0.5 rounded-full bg-[#fdecea] text-[#b91c1c]'
+                  ? 'text-[9px] tracking-[0.1em] uppercase font-sans font-semibold px-2.5 py-0.5 rounded-full bg-[#fdecea] text-[#550000]'
                   : getTimeInStatus(row) === 'Late'
-                    ? 'text-[9px] tracking-[0.1em] uppercase font-sans font-medium px-2.5 py-0.5 rounded-full bg-[#fef3e2] text-[#9a5f1a]'
-                    : 'text-[9px] tracking-[0.1em] uppercase font-sans font-medium px-2.5 py-0.5 rounded-full bg-[#e8f4ec] text-[#276749]'
+                    ? 'text-[9px] tracking-[0.1em] uppercase font-sans font-semibold px-2.5 py-0.5 rounded-full bg-[#fef3e2] text-[#9a5f1a]'
+                    : 'text-[9px] tracking-[0.1em] uppercase font-sans font-semibold px-2.5 py-0.5 rounded-full bg-[#e8f4ec] text-[#276749]'
               "
             >
               {{ getTimeInStatus(row) }}
@@ -53,15 +55,15 @@
           </td>
         </template>
       </DataTable>
-      <div v-if="sortedList.length > pageSize" class="p-4 border-t border-anito-gray-light bg-white flex items-center justify-between">
-        <p class="text-anito-gray text-sm font-sans font-light">
+      <div v-if="sortedList.length > pageSize" class="p-4 border-t border-gray-200 bg-white flex items-center justify-between">
+        <p class="text-gray-500 text-sm font-sans font-semibold">
           Showing {{ (currentPage - 1) * pageSize + 1 }}–{{ Math.min(currentPage * pageSize, sortedList.length) }} of {{ sortedList.length }}
         </p>
         <div class="flex gap-2">
-          <Button variant="secondary" size="sm" :disabled="currentPage <= 1" @click="currentPage--">
+          <Button variant="secondary" size="sm" class="bg-[#003777] text-white hover:bg-[#003777]/90 font-sans font-semibold" :disabled="currentPage <= 1" @click="currentPage--">
             Previous
           </Button>
-          <Button variant="secondary" size="sm" :disabled="currentPage >= totalPages" @click="currentPage++">
+          <Button variant="secondary" size="sm" class="bg-[#003777] text-white hover:bg-[#003777]/90 font-sans font-semibold" :disabled="currentPage >= totalPages" @click="currentPage++">
             Next
           </Button>
         </div>
@@ -202,3 +204,17 @@ onMounted(async () => {
   loadDay()
 })
 </script>
+
+<style scoped>
+:deep(th) {
+  background-color: #003777 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+}
+
+:deep(td) {
+  font-weight: 600 !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif !important;
+}
+</style>

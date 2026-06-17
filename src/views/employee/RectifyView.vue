@@ -1,494 +1,380 @@
 <template>
-  <div class="max-w-4xl">
-    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
+    <!-- Header -->
+    <div class="mb-8 flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1
-          class="font-display font-light text-xl tracking-wide text-anito-black"
-        >
-          Rectify Attendance
-        </h1>
-        <p
-          class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed"
-        >
+        <p class="text-gray-600 text-sm mt-2 leading-relaxed">
           Request corrections for your attendance records.
         </p>
       </div>
       <button
         type="button"
-        class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
+        class="bg-[#003777] text-white text-sm font-medium px-6 py-2.5 rounded-lg hover:bg-[#002555] transition-colors duration-200 shadow-sm"
         @click="openRectifyModal"
       >
         Request Rectification
       </button>
-    </header>
+    </div>
 
-    <!-- Success/error messages (outside modal) -->
-    <div
-      v-if="submitSuccess"
-      class="mb-4 p-3 rounded bg-green-50 text-green-800 text-sm font-sans"
-    >
+    <!-- Alert Messages -->
+    <div v-if="submitSuccess" class="mb-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm">
       {{ submitSuccess }}
     </div>
-    <div
-      v-if="submitError"
-      class="mb-4 p-3 rounded bg-red-50 text-red-700 text-sm font-sans"
-    >
+    <div v-if="submitError" class="mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
       {{ submitError }}
     </div>
 
-    <!-- DTR Rectification Request Modal (Step 1: form → Step 2: list + submit) -->
+    <!-- Request Modal -->
     <div
       v-if="showRectifyModal"
-      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20"
       @click.self="closeRectifyModal"
     >
-      <div
-        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-auto border border-anito-gray-light overflow-hidden max-h-[90vh] flex flex-col"
-      >
-        <div
-          class="px-6 py-4 border-b border-anito-gray-light bg-white shrink-0"
-        >
-          <div class="flex items-center justify-between">
-            <h2
-              class="font-display font-light text-lg tracking-wide text-anito-black"
-            >
-              {{
-                editingRequest
-                  ? "Edit DTR Rectification Request"
-                  : "DTR Rectification Request Form"
-              }}
-            </h2>
+      <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-gray-200 bg-white shrink-0">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">
+                {{ editingRequest ? "Edit Rectification Request" : "DTR Rectification Request" }}
+              </h2>
+              <p class="text-sm text-gray-600 mt-1">{{ editingRequest ? "Update your request" : "Submit corrections for your attendance" }}</p>
+            </div>
             <button
               type="button"
-              class="text-anito-gray hover:text-anito-black transition-colors"
+              class="text-gray-500 hover:text-gray-700 transition-colors"
               aria-label="Close"
               @click="closeRectifyModal"
             >
-              ✕
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-          <!-- When editing, show single "Editing request" state; when adding, show Step 1 / Step 2 -->
-          <div v-if="editingRequest" class="flex gap-2 mt-3">
+
+          <!-- Step Indicator (only when not editing) -->
+          <div v-if="!editingRequest" class="flex gap-2">
             <span
-              class="text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium bg-anito-black text-white"
-            >
-              Editing request
-            </span>
-          </div>
-          <div v-else class="flex gap-2 mt-3">
-            <span
-              :class="[
-                'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium',
-                modalStep === 1
-                  ? 'bg-anito-black text-white'
-                  : 'bg-anito-gray-light text-anito-gray',
-              ]"
+              class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors"
+              :class="modalStep === 1 ? 'bg-[#003777] text-white' : 'bg-gray-100 text-gray-700'"
             >
               Step 1 — Add request
             </span>
             <button
               type="button"
+              class="px-3 py-1.5 text-xs font-medium rounded-full transition-colors"
               :class="[
-                'text-[9px] tracking-[0.15em] uppercase px-3 py-1.5 rounded font-sans font-medium transition-colors',
                 modalStep === 2
-                  ? 'bg-anito-black text-white'
+                  ? 'bg-[#003777] text-white'
                   : rectifications.length
-                    ? 'bg-anito-gray-light text-anito-black hover:bg-anito-gray-light/80'
-                    : 'bg-anito-gray-light/50 text-anito-gray cursor-default',
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-gray-50 text-gray-400 cursor-not-allowed'
               ]"
               :disabled="rectifications.length === 0"
               @click="goToStep2"
             >
-              Step 2 — Review & submit ({{ rectifications.length }})
+              Step 2 — Review ({{ rectifications.length }})
             </button>
           </div>
         </div>
 
-        <!-- Step 1: Rectification form -->
-        <form
-          v-show="modalStep === 1"
-          class="p-6 space-y-4 shrink-0"
-          @submit.prevent="
-            editingRequest ? submitEditRequest() : addRectification()
-          "
-        >
-          <div>
-            <label
-              for="rectify-date"
-              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-            >
-              Specified date/s *
-            </label>
-            <input
-              id="rectify-date"
-              v-model="form.date"
-              type="date"
-              required
-              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-            />
-          </div>
-
-          <div>
-            <span
-              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-            >
-              Nature of rectification *
-            </span>
-            <div class="flex flex-wrap gap-4">
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  v-model="form.nature"
-                  type="radio"
-                  value="time_in"
-                  class="text-anito-blue-mid focus:ring-anito-blue-mid"
-                />
-                <span class="text-sm font-sans text-anito-black"
-                  >Missed Logged-In</span
-                >
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  v-model="form.nature"
-                  type="radio"
-                  value="time_out"
-                  class="text-anito-blue-mid focus:ring-anito-blue-mid"
-                />
-                <span class="text-sm font-sans text-anito-black"
-                  >Missed Logged-Out</span
-                >
-              </label>
-            </div>
-          </div>
-
-          <div>
-            <label
-              for="rectify-reason"
-              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-            >
-              Reason/s *
-            </label>
-            <textarea
-              id="rectify-reason"
-              v-model="form.reason"
-              rows="3"
-              required
-              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black placeholder-anito-gray focus:border-anito-blue-mid focus:outline-none w-full transition-colors resize-none"
-              placeholder="State the reason for this rectification..."
-            />
-          </div>
-
-          <div>
-            <label
-              for="rectify-time"
-              class="block text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium mb-2"
-            >
-              Specify rectified time *
-            </label>
-            <input
-              id="rectify-time"
-              v-model="form.rectifiedTime"
-              type="time"
-              required
-              class="border border-anito-gray-light rounded bg-transparent px-4 py-3 text-sm font-sans text-anito-black focus:border-anito-blue-mid focus:outline-none w-full transition-colors"
-            />
-          </div>
-
-          <div class="flex gap-2 pt-2 border-t border-anito-gray-light pt-4">
-            <button
-              type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
-              @click="closeRectifyModal"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium"
-            >
-              {{ editingRequest ? "Update Request" : "Add to list" }}
-            </button>
-            <button
-              v-if="!editingRequest && rectifications.length > 0"
-              type="button"
-              class="border border-anito-blue-mid text-anito-blue-mid text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-light transition-colors duration-150 font-sans font-medium"
-              @click="modalStep = 2"
-            >
-              Review & submit ({{ rectifications.length }})
-            </button>
-          </div>
-        </form>
-
-        <!-- Step 2: List of requests + Submit all -->
-        <div
-          v-show="modalStep === 2"
-          class="p-6 flex flex-col min-h-0 flex-1 overflow-hidden"
-        >
-          <p class="text-anito-gray text-sm font-sans font-light mb-4">
-            Review your rectification requests below, then submit all.
-          </p>
-          <ul
-            class="space-y-2 overflow-y-auto flex-1 min-h-0 border border-anito-gray-light rounded px-3 py-2"
+        <!-- Modal Content -->
+        <div class="overflow-y-auto flex-1">
+          <!-- Step 1: Form -->
+          <form
+            v-show="modalStep === 1"
+            class="p-8 space-y-6"
+            @submit.prevent="editingRequest ? submitEditRequest() : addRectification()"
           >
-            <li
-              v-for="rect in rectifications"
-              :key="rect.id"
-              class="flex items-start justify-between gap-3 py-2 border-b border-anito-gray-light last:border-0 last:pb-0"
-            >
-              <div class="min-w-0 text-sm font-sans text-anito-black">
-                <span class="font-medium">{{ formatDate(rect.date) }}</span>
-                —
-                {{
-                  rect.nature === "time_in"
-                    ? "Missed Logged-In"
-                    : "Missed Logged-Out"
-                }}
-                · {{ rect.rectifiedTime }}
-                <p
-                  class="text-anito-gray text-xs mt-0.5 truncate"
-                  :title="rect.reason"
-                >
-                  {{ rect.reason }}
-                </p>
+            <!-- Date Field -->
+            <div>
+              <label for="rectify-date" class="block text-sm font-medium text-gray-900 mb-2">
+                Specified date <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="rectify-date"
+                v-model="form.date"
+                type="date"
+                required
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors"
+              />
+            </div>
+
+            <!-- Nature Field -->
+            <div>
+              <label class="block text-sm font-medium text-gray-900 mb-3">
+                Nature of rectification <span class="text-red-500">*</span>
+              </label>
+              <div class="flex gap-6">
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    v-model="form.nature"
+                    type="radio"
+                    value="time_in"
+                    class="w-4 h-4 border-gray-300 text-[#003777]"
+                  />
+                  <span class="text-sm text-gray-900">Missed Logged-In</span>
+                </label>
+                <label class="flex items-center gap-3 cursor-pointer">
+                  <input
+                    v-model="form.nature"
+                    type="radio"
+                    value="time_out"
+                    class="w-4 h-4 border-gray-300 text-[#003777]"
+                  />
+                  <span class="text-sm text-gray-900">Missed Logged-Out</span>
+                </label>
               </div>
+            </div>
+
+            <!-- Reason Field -->
+            <div>
+              <label for="rectify-reason" class="block text-sm font-medium text-gray-900 mb-2">
+                Reason <span class="text-red-500">*</span>
+              </label>
+              <textarea
+                id="rectify-reason"
+                v-model="form.reason"
+                rows="3"
+                required
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-500 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors resize-none"
+                placeholder="State the reason for this rectification..."
+              />
+            </div>
+
+            <!-- Time Field -->
+            <div>
+              <label for="rectify-time" class="block text-sm font-medium text-gray-900 mb-2">
+                Specify rectified time <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="rectify-time"
+                v-model="form.rectifiedTime"
+                type="time"
+                required
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors"
+              />
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-6 border-t border-gray-200">
               <button
                 type="button"
-                class="shrink-0 text-anito-gray hover:text-red-600 transition-colors p-1"
-                aria-label="Remove"
-                @click="removeRectification(rectifications.indexOf(rect))"
+                class="px-6 py-2.5 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                @click="closeRectifyModal"
               >
-                ✕
+                Cancel
               </button>
-            </li>
-          </ul>
-          <div
-            class="flex gap-2 pt-4 border-t border-anito-gray-light mt-4 shrink-0"
-          >
-            <button
-              type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
-              @click="modalStep = 1"
-            >
-              Back — Add more
-            </button>
-            <button
-              type="button"
-              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-blue-deep transition-colors duration-150 font-sans font-medium disabled:opacity-50"
-              :disabled="submitting"
-              @click="submitAllRequests"
-            >
-              {{
-                submitting
-                  ? "Submitting…"
-                  : `Submit all (${rectifications.length})`
-              }}
-            </button>
+              <button
+                type="submit"
+                class="px-6 py-2.5 bg-[#003777] text-white text-sm font-medium rounded-lg hover:bg-[#002555] transition-colors"
+              >
+                {{ editingRequest ? "Update Request" : "Add to list" }}
+              </button>
+              <button
+                v-if="!editingRequest && rectifications.length > 0"
+                type="button"
+                class="px-6 py-2.5 border border-[#003777] text-[#003777] text-sm font-medium rounded-lg hover:bg-blue-50 transition-colors"
+                @click="modalStep = 2"
+              >
+                Review ({{ rectifications.length }})
+              </button>
+            </div>
+          </form>
+
+          <!-- Step 2: Review List -->
+          <div v-show="modalStep === 2" class="p-8 flex flex-col min-h-0">
+            <p class="text-gray-600 text-sm mb-6">
+              Review your rectification requests below, then submit all.
+            </p>
+            
+            <div class="space-y-2 overflow-y-auto flex-1 border border-gray-200 rounded-lg p-4 mb-6">
+              <div
+                v-for="(rect, index) in rectifications"
+                :key="rect.id"
+                class="flex items-start justify-between gap-3 py-3 px-3 border-b border-gray-200 last:border-0 bg-gray-50 rounded hover:bg-gray-100 transition-colors"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="font-medium text-sm text-gray-900">{{ formatDate(rect.date) }}</span>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                      :class="rect.nature === 'time_in' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'"
+                    >
+                      {{ rect.nature === "time_in" ? "Time In" : "Time Out" }}
+                    </span>
+                    <span class="text-xs text-gray-600">{{ rect.rectifiedTime }}</span>
+                  </div>
+                  <p class="text-xs text-gray-600 truncate" :title="rect.reason">{{ rect.reason }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="shrink-0 text-gray-400 hover:text-red-600 transition-colors p-1"
+                  aria-label="Remove"
+                  @click="removeRectification(index)"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-4 border-t border-gray-200">
+              <button
+                type="button"
+                class="px-6 py-2.5 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                @click="modalStep = 1"
+              >
+                Back — Add more
+              </button>
+              <button
+                type="button"
+                class="px-6 py-2.5 bg-[#003777] text-white text-sm font-medium rounded-lg hover:bg-[#002555] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                :disabled="submitting"
+                @click="submitAllRequests"
+              >
+                <svg v-if="!submitting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="31.416" stroke-dashoffset="31.416" />
+                </svg>
+                {{ submitting ? "Submitting…" : `Submit all (${rectifications.length})` }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Previous Requests -->
-    <section class="rounded border border-anito-gray-light overflow-hidden">
-      <div
-        class="flex flex-col gap-2 px-4 py-3 border-b border-anito-gray-light bg-white"
-      >
-        <h2
-          class="text-[10px] tracking-[0.25em] uppercase text-anito-gray font-sans font-medium"
-        >
-          Your Previous Requests
-        </h2>
-        <div class="flex flex-wrap gap-2 text-xs font-sans">
+    <!-- Previous Requests Section -->
+    <section class="rounded-lg border border-gray-200 overflow-hidden bg-white">
+      <!-- Section Header with Filters -->
+      <div class="px-8 py-6 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Your Previous Requests</h2>
+        <div class="flex flex-wrap gap-2">
           <button
+            v-for="filter in [
+              { value: 'all', label: 'All', count: userRequests.length },
+              { value: 'pending', label: 'Pending', count: pendingCount },
+              { value: 'approved', label: 'Approved', count: approvedCount },
+              { value: 'rejected', label: 'Rejected', count: rejectedCount },
+            ]"
+            :key="filter.value"
             type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
+            class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors"
             :class="
-              statusFilter === 'all'
-                ? 'bg-anito-black text-white border-anito-black'
-                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
+              statusFilter === filter.value
+                ? filter.value === 'approved'
+                  ? 'bg-green-100 text-green-800'
+                  : filter.value === 'rejected'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-[#003777] text-white'
+                : 'border border-gray-300 text-gray-700 hover:bg-gray-100'
             "
-            @click="statusFilter = 'all'"
+            @click="statusFilter = filter.value"
           >
-            All
-            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
-              {{ userRequests.length }}
-            </span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
-            :class="
-              statusFilter === 'pending'
-                ? 'bg-anito-black text-white border-anito-black'
-                : 'border-anito-gray-light text-anito-black hover:border-anito-black'
-            "
-            @click="statusFilter = 'pending'"
-          >
-            Pending
-            <span class="text-[10px] px-1 rounded-full bg-anito-gray-light">
-              {{ pendingCount }}
-            </span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
-            :class="
-              statusFilter === 'approved'
-                ? 'bg-emerald-500/10 text-emerald-700 border-emerald-500'
-                : 'border-anito-gray-light text-anito-black hover:border-emerald-500'
-            "
-            @click="statusFilter = 'approved'"
-          >
-            Approved
-            <span class="text-[10px] px-1 rounded-full bg-emerald-100 text-emerald-700">
-              {{ approvedCount }}
-            </span>
-          </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border text-[11px]"
-            :class="
-              statusFilter === 'rejected'
-                ? 'bg-red-500/10 text-red-700 border-red-500'
-                : 'border-anito-gray-light text-anito-black hover:border-red-500'
-            "
-            @click="statusFilter = 'rejected'"
-          >
-            Rejected
-            <span class="text-[10px] px-1 rounded-full bg-red-100 text-red-700">
-              {{ rejectedCount }}
+            {{ filter.label }}
+            <span
+              class="inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-semibold"
+              :class="
+                statusFilter === filter.value
+                  ? 'bg-white/30'
+                  : 'bg-gray-200 text-gray-700'
+              "
+            >
+              {{ filter.count }}
             </span>
           </button>
         </div>
       </div>
-      <div v-if="loading" class="p-8">
-        <LoadingBar />
+
+      <!-- Loading / Error / Empty States -->
+      <div v-if="loading" class="p-12 text-center">
+        <div class="inline-block">
+          <div class="w-8 h-8 border-4 border-gray-200 border-t-[#003777] rounded-full animate-spin"></div>
+        </div>
       </div>
-      <div v-else-if="error" class="p-4 text-red-600 text-sm">{{ error }}</div>
-      <div v-else-if="!userRequests.length" class="p-8">
-        <EmptyState
-          title="No previous requests"
-          subtitle="No previous requests found."
-        />
+      <div v-else-if="error" class="p-8">
+        <div class="p-4 rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm">
+          {{ error }}
+        </div>
       </div>
+      <div v-else-if="!userRequests.length" class="p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="text-gray-900 font-medium text-sm mt-4">No previous requests</h3>
+        <p class="text-gray-600 text-sm mt-1">No previous requests found.</p>
+      </div>
+
+      <!-- Table -->
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm text-left">
-          <thead class="bg-anito-black">
+        <table class="w-full">
+          <thead class="bg-[#003777]">
             <tr>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Date
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Reason
-              </th>
-              <th
-                v-if="statusFilter === 'pending'"
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Nature of rectification
-              </th>
-              <th
-                v-if="statusFilter === 'pending'"
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Specified rectified time
-              </th>
-              <th
-                v-if="statusFilter === 'all'"
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-left"
-              >
-                Status
-              </th>
-              <th
-                class="text-anito-gray-light text-[9px] tracking-[0.25em] uppercase font-sans font-medium px-4 py-3 text-center"
-              >
-                Actions
-              </th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Date</th>
+              <th class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Reason</th>
+              <th v-if="statusFilter === 'pending'" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Type</th>
+              <th v-if="statusFilter === 'pending'" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Time</th>
+              <th v-if="statusFilter === 'all'" class="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wide">Status</th>
+              <th class="px-6 py-4 text-center text-xs font-semibold text-white uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="request in filteredUserRequests"
               :key="request.id"
-              class="bg-white hover:bg-anito-blue-light border-b border-anito-gray-light transition-colors duration-150"
+              class="hover:bg-gray-50 transition-colors"
             >
-              <td class="px-4 py-3 text-sm font-sans text-anito-black">
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">
                 {{ formatDate(request.date) }}
               </td>
-              <td
-                class="px-4 py-3 text-sm font-sans text-anito-black max-w-xs truncate"
-                :title="request.reason"
-              >
+              <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" :title="request.reason">
                 {{ request.reason }}
               </td>
-              <td
-                v-if="statusFilter === 'pending'"
-                class="px-4 py-3 text-sm font-sans text-anito-black"
-              >
-                {{
-                  request.requested_in
-                    ? "Missed Logged-In"
-                    : "Missed Logged-Out"
-                }}
+              <td v-if="statusFilter === 'pending'" class="px-6 py-4 text-sm text-gray-900">
+                {{ request.requested_in ? "Missed Logged-In" : "Missed Logged-Out" }}
               </td>
-              <td
-                v-if="statusFilter === 'pending'"
-                class="px-4 py-3 text-sm font-sans text-anito-black"
-              >
+              <td v-if="statusFilter === 'pending'" class="px-6 py-4 text-sm font-medium text-gray-900">
                 {{ request.requested_in || request.requested_out || "—" }}
               </td>
-              <td v-if="statusFilter === 'all'" class="px-4 py-3">
+              <td v-if="statusFilter === 'all'" class="px-6 py-4">
                 <span
-                  :class="getStatusClass(request.status)"
-                  class="text-[10px] tracking-[0.2em] uppercase px-2 py-1 rounded font-sans font-medium"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                  :class="
+                    request.status === 'approved'
+                      ? 'bg-green-100 text-green-800'
+                      : request.status === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800'
+                  "
                 >
                   {{ request.status }}
                 </span>
               </td>
-              <td class="px-4 py-3">
+              <td class="px-6 py-4">
                 <div class="flex items-center gap-2 justify-center">
                   <button
                     type="button"
-                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-anito-black hover:bg-anito-gray-light rounded transition-all duration-150 disabled:text-anito-gray disabled:cursor-not-allowed"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     @click="editRequest(request)"
                     :disabled="request.status !== 'pending'"
                   >
-                    <svg
-                      class="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                      ></path>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
                     Edit
                   </button>
                   <button
                     type="button"
-                    class="inline-flex items-center gap-1 px-2 py-1 text-[10px] font-medium text-anito-black hover:bg-anito-gray-light rounded transition-all duration-150 disabled:text-anito-gray disabled:cursor-not-allowed"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 hover:text-red-900 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     @click="openDeleteModal(request)"
                     :disabled="request.status !== 'pending'"
                   >
-                    <svg
-                      class="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      ></path>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                     Delete
                   </button>
@@ -503,47 +389,44 @@
     <!-- Delete Confirmation Modal -->
     <div
       v-if="showDeleteModal"
-      class="fixed inset-0 z-10 flex items-center justify-center p-4 bg-anito-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/20"
       @click.self="closeDeleteModal"
     >
-      <div
-        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-auto border border-anito-gray-light overflow-hidden"
-      >
-        <div class="px-6 py-4 border-b border-anito-gray-light bg-white">
-          <div class="flex items-center justify-between">
-            <h2
-              class="font-display font-light text-lg tracking-wide text-anito-black"
-            >
-              Confirm Delete
-            </h2>
-            <button
-              type="button"
-              class="text-anito-gray hover:text-anito-black transition-colors"
-              aria-label="Close"
-              @click="closeDeleteModal"
-            >
-              ✕
-            </button>
-          </div>
+      <div class="bg-white rounded-lg shadow-lg max-w-md w-full">
+        <!-- Modal Header -->
+        <div class="px-8 py-6 border-b border-gray-200 flex items-center justify-between">
+          <h2 class="text-lg font-semibold text-gray-900">Confirm Delete</h2>
+          <button
+            type="button"
+            class="text-gray-500 hover:text-gray-700 transition-colors"
+            aria-label="Close"
+            @click="closeDeleteModal"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <div class="p-6">
-          <p class="text-sm font-sans text-anito-black mb-4">
+
+        <!-- Modal Body -->
+        <div class="p-8">
+          <p class="text-sm text-gray-900 mb-2">
             Are you sure you want to delete this rectification request?
           </p>
-          <p class="text-xs font-sans text-anito-gray mb-6">
+          <p class="text-xs text-gray-600 mb-8">
             This action cannot be undone.
           </p>
-          <div class="flex gap-2 justify-end">
+          <div class="flex gap-3">
             <button
               type="button"
-              class="border border-anito-gray-light text-anito-black text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:border-anito-black transition-colors duration-150 font-sans font-medium"
+              class="flex-1 px-4 py-2.5 border border-gray-300 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
               @click="closeDeleteModal"
             >
               Cancel
             </button>
             <button
               type="button"
-              class="bg-anito-black text-white text-[10px] tracking-[0.2em] uppercase px-5 py-2.5 rounded hover:bg-anito-gray transition-colors duration-150 font-sans font-medium"
+              class="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="deleting"
               @click="confirmDelete"
             >
@@ -561,16 +444,14 @@ import { ref, reactive, onMounted, computed } from "vue";
 import { useRectificationsStore } from "@/stores/rectifications.js";
 import { useAuthStore } from "@/stores/auth.js";
 import { useFormatters } from "@/composables/useFormatters.js";
-import LoadingBar from "@/components/ui/LoadingBar.vue";
-import EmptyState from "@/components/ui/EmptyState.vue";
 
 const rectificationsStore = useRectificationsStore();
 const authStore = useAuthStore();
-const { formatDate, getStatusClass } = useFormatters();
+const { formatDate } = useFormatters();
 
 const showRectifyModal = ref(false);
-const modalStep = ref(1); // 1 = form, 2 = review list + submit
-const rectifications = ref([]); // list of { date, nature, reason, rectifiedTime }
+const modalStep = ref(1);
+const rectifications = ref([]);
 
 const form = reactive({
   date: "",
@@ -596,9 +477,9 @@ const filteredUserRequests = computed(() => {
   if (statusFilter.value === "all") return userRequests.value;
   return userRequests.value.filter((r) => r.status === statusFilter.value);
 });
+
 const loading = ref(false);
 const error = ref("");
-
 const submitting = ref(false);
 const submitError = ref("");
 const submitSuccess = ref("");
@@ -691,18 +572,13 @@ async function submitEditRequest() {
     requestedOut: requestedOut || null,
   };
 
-  // Debug logging
-  console.log("Editing request object:", editingRequest.value);
-  console.log("Request ID being passed:", editingRequest.value.id);
-
   const result = await rectificationsStore.updateRequest(
     editingRequest.value.id,
     requestData,
   );
 
   if (result.ok) {
-    submitSuccess.value =
-      "Your rectification request has been updated successfully.";
+    submitSuccess.value = "Your rectification request has been updated successfully.";
     closeRectifyModal();
     await fetchUserRequests();
     setTimeout(() => {
@@ -716,7 +592,6 @@ async function submitEditRequest() {
 }
 
 async function submitAllRequests() {
-  // Handle edit case - direct submission of single edited request
   if (editingRequest.value) {
     submitting.value = true;
     submitError.value = "";
@@ -740,8 +615,7 @@ async function submitAllRequests() {
     );
 
     if (result.ok) {
-      submitSuccess.value =
-        "Your rectification request has been updated successfully.";
+      submitSuccess.value = "Your rectification request has been updated successfully.";
       closeRectifyModal();
       await fetchUserRequests();
       setTimeout(() => {
@@ -755,7 +629,6 @@ async function submitAllRequests() {
     return;
   }
 
-  // Handle create case - multiple rectifications
   if (rectifications.value.length === 0) return;
 
   submitting.value = true;
@@ -777,8 +650,6 @@ async function submitAllRequests() {
   });
 
   const results = await Promise.all(promises);
-
-  // Check if all were successful
   const allSuccessful = results.every((result) => result.ok);
 
   if (allSuccessful) {
@@ -799,18 +670,14 @@ async function submitAllRequests() {
 function editRequest(request) {
   if (request.status !== "pending") return;
 
-  // Debug logging
-  console.log("Edit request called with:", request);
-
   editingRequest.value = request;
   form.date = request.date;
   form.reason = request.reason;
   form.nature = request.requested_in ? "time_in" : "time_out";
   form.rectifiedTime = request.requested_in || request.requested_out || "";
 
-  // For editing, skip the multi-step flow and go directly to single submit mode
   modalStep.value = 1;
-  rectifications.value = []; // Clear any existing rectifications
+  rectifications.value = [];
   showRectifyModal.value = true;
 }
 

@@ -9,7 +9,6 @@ on conflict do nothing;
 -- Example holidays (current year; adjust dates as needed)
 insert into public.holidays (date, name, type)
 values
-  ('2025-01-01', 'New Year''s Day', 'regular'),
-  ('2025-04-18', 'Good Friday', 'regular'),
-  ('2025-12-25', 'Christmas Day', 'regular')
+  ('2026-08-21', 'Ninoy Aquino Day', 'regular'),
+  ('2026-12-30', 'National Heroes Day', 'regular')
 on conflict (date) do nothing;
