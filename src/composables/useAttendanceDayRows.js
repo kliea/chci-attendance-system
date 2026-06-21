@@ -10,11 +10,22 @@ import { useSettingsStore } from "@/stores/settings.js";
 export function timeToMinutes(t) {
   if (t == null || t === "") return null;
   const s = String(t).trim();
-  const parts = s.split(":").map(Number);
-  const h = parts[0];
-  const min = parts[1] ?? 0;
-  if (h == null || isNaN(h)) return null;
-  return h * 60 + min;
+  const match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i);
+  if (!match) return null;
+
+  let h = Number(match[1]);
+  const min = Number(match[2]);
+  const sec = match[3] != null ? Number(match[3]) : 0;
+  const meridiem = match[4]?.toUpperCase();
+
+  if (Number.isNaN(h) || Number.isNaN(min) || Number.isNaN(sec)) return null;
+  if (meridiem === "AM") {
+    if (h === 12) h = 0;
+  } else if (meridiem === "PM") {
+    if (h < 12) h += 12;
+  }
+
+  return h * 60 + min + sec / 60;
 }
 
 /**
@@ -36,7 +47,7 @@ export function computeHoursRenderedForDay(timeInStr, timeOutStr) {
 
   // Use dynamic late threshold from settings
   const settingsStore = useSettingsStore();
-  const GRACE_END = settingsStore.lateThresholdMinutes;
+  const GRACE_END = settingsStore.lateThresholdMinutes ?? 8 * 60 + 30; // Default 8:30 AM
 
   const lateMinutes = tin <= GRACE_END ? 0 : Math.round(tin - GRACE_END);
   const isLate = lateMinutes > 0;
@@ -74,26 +85,36 @@ export function buildDayRows(selectedMonth, logs) {
   const [y, m] = selectedMonth.split("-").map(Number);
   const lastDay = new Date(y, m, 0).getDate();
   const byDate = {};
+  
+  // Index logs by date
   for (const log of logs || []) {
     const d =
       (typeof log.date === "string" ? log.date : log.date?.slice?.(0, 10)) ??
       "";
     if (d) byDate[d] = log;
   }
+  
   const pad = (n) => String(n).padStart(2, "0");
   const rows = [];
+  
+  // Build row for each day of month
   for (let day = 1; day <= lastDay; day++) {
     const dateStr = `${y}-${pad(m)}-${pad(day)}`;
     const d = new Date(y, m - 1, day);
     const weekday = d.toLocaleDateString("en-US", { weekday: "long" });
     const log = byDate[dateStr];
-    const timeIn =
-      log?.time_in != null ? formatTimeAmPm(String(log.time_in)) : null;
-    const timeOut =
-      log?.time_out != null ? formatTimeAmPm(String(log.time_out)) : null;
+    
+    // Format time values only if log exists
+    const timeIn = log?.time_in != null 
+      ? formatTimeAmPm(String(log.time_in)) 
+      : null;
+    const timeOut = log?.time_out != null 
+      ? formatTimeAmPm(String(log.time_out)) 
+      : null;
     const hoursRendered = log
       ? formatHours(computeHoursRenderedForDay(log.time_in, log.time_out))
       : null;
+    
     rows.push({
       dateStr,
       day,
@@ -104,6 +125,7 @@ export function buildDayRows(selectedMonth, logs) {
       hasLog: !!log,
     });
   }
+  
   return rows;
 }
 

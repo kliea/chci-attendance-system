@@ -44,11 +44,23 @@ export function formatTime(t) {
 /** Format time as 12h with AM/PM (e.g. "8:11AM", "12:04PM") for AM/PM reflection tables. */
 export function formatTimeAmPm(t) {
   if (t == null || t === "") return null;
-  const s = typeof t === "string" ? t : String(t);
-  const [h, min] = s.split(":").map(Number);
-  if (h == null || isNaN(h)) return null;
-  const hour12 = h % 12 || 12;
-  const ampm = (h ?? 0) < 12 ? "AM" : "PM";
-  const m = min != null && !isNaN(min) ? String(min).padStart(2, "0") : "00";
+  const s = typeof t === "string" ? t.trim() : String(t).trim();
+  const match = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?$/i);
+  if (!match) return null;
+
+  let hour24 = Number(match[1]);
+  const minute = Number(match[2]);
+  const meridiem = match[4]?.toUpperCase();
+
+  if (Number.isNaN(hour24) || Number.isNaN(minute)) return null;
+  if (meridiem === "AM") {
+    if (hour24 === 12) hour24 = 0;
+  } else if (meridiem === "PM") {
+    if (hour24 < 12) hour24 += 12;
+  }
+
+  const hour12 = hour24 % 12 || 12;
+  const ampm = hour24 < 12 ? "AM" : "PM";
+  const m = String(minute).padStart(2, "0");
   return `${hour12}:${m}${ampm}`;
 }

@@ -1,5 +1,5 @@
 <template>
-    <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
+  <div class="max-w-6xl mx-auto bg-[#ffffff] font-sans antialiased rounded-lg min-h-screen p-8">
     <header class="mb-6">
       <p class="text-anito-gray text-sm font-sans font-light mt-1 leading-relaxed">Your attendance log by day. Filter by month.</p>
     </header>
@@ -62,7 +62,10 @@ import { Card, CardHeaderFlex, Input, Label, Button, AttendanceDayTable, PrintDa
 const attendance = useAttendanceStore()
 const auth = useAuthStore()
 
+// Fallbacks are sequenced to guarantee a lookup string is grabbed if present anywhere in metadata/profile
+const employeeBioId = computed(() => auth.profile?.bio_id || auth.user?.user_metadata?.bio_id || '')
 const employeeName = computed(() => auth.fullName || auth.profile?.full_name || '')
+
 const monthLabel = computed(() => {
   const ym = selectedMonth.value
   if (!ym || ym.length < 7) return ''
@@ -77,6 +80,17 @@ function currentYearMonth() {
   return `${y}-${m}`
 }
 const selectedMonth = ref(currentYearMonth())
+
+function monthFromLogs(logs) {
+  let latest = ''
+  for (const log of logs || []) {
+    const date = typeof log.date === 'string' ? log.date : log.date?.slice?.(0, 10)
+    if (!date) continue
+    const ym = date.slice(0, 7)
+    if (ym > latest) latest = ym
+  }
+  return latest
+}
 
 const monthRange = computed(() => {
   if (!selectedMonth.value || selectedMonth.value.length < 7) return { dateFrom: null, dateTo: null }
@@ -98,8 +112,25 @@ const totalHoursFormatted = computed(() =>
   formatHours(totalHoursRenderedInMonth(selectedMonth.value, attendance.list)) ?? '—'
 )
 
-onMounted(() => {
+onMounted(async () => {
   setDefaultMonth()
+  
+  // Explicitly ensure the auth system has hydrated its state properties
+  if (typeof auth.init === 'function') {
+    await auth.init()
+  } else if (typeof auth.fetchProfile === 'function') {
+    await auth.fetchProfile()
+  }
+
+  // Initial global lookup fetch to figure out where logs exist
+  await attendance.fetchAttendance({ forCurrentUserOnly: true, bioId: employeeBioId.value })
+  
+  const latestMonth = monthFromLogs(attendance.list)
+  if (latestMonth) {
+    selectedMonth.value = latestMonth
+  }
+  
+  // Re-run with strict date parameters applied
   applyMonth()
 })
 
@@ -107,12 +138,13 @@ function setDefaultMonth() {
   selectedMonth.value = currentYearMonth()
 }
 
-// Fetches current user's rows from attendance_logs for the selected month (profile.bio_id → staff_id).
 function applyMonth() {
   const { dateFrom, dateTo } = monthRange.value
   if (!dateFrom || !dateTo) return
+  
   attendance.fetchAttendance({
     forCurrentUserOnly: true,
+    bioId: employeeBioId.value || undefined,
     dateFrom,
     dateTo,
   })

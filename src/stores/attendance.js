@@ -37,12 +37,22 @@ export const useAttendanceStore = defineStore('attendance', () => {
     const requestPage = usePagination ? opts.page : 1
     const requestPageSize = usePagination ? opts.pageSize : 1000
 
+    const selectClause = opts.forCurrentUserOnly
+      ? 'id, date, time_in, time_out, source, staff_id'
+      : 'id, date, time_in, time_out, source, staff_id, staff(full_name, bio_id)'
+
     let query = supabase
       .from('attendance_logs')
-      .select('id, date, time_in, time_out, source, staff_id, staff(full_name, bio_id)', { count: usePagination ? 'exact' : undefined })
+      .select(selectClause, { count: usePagination ? 'exact' : undefined })
       .order('date', { ascending: false })
 
     if (opts.forCurrentUserOnly) {
+      const directBioId = typeof opts.bioId === 'string' ? opts.bioId.trim() : ''
+      if (directBioId) {
+        const { data: staffRow, error: staffError } = await supabase.from('staff').select('id').eq('bio_id', directBioId).maybeSingle()
+        if (staffError) throw staffError
+        if (staffRow?.id) query = query.eq('staff_id', staffRow.id)
+      } else {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.id) {
         const { data: profile, error: profileError } = await supabase.from('profiles').select('bio_id').eq('id', user.id).maybeSingle()
@@ -53,6 +63,7 @@ export const useAttendanceStore = defineStore('attendance', () => {
           if (staffRow?.id) query = query.eq('staff_id', staffRow.id)
           // Employees need RLS "Users can select own staff row" on staff so this lookup and the attendance_logs→staff join succeed.
         }
+      }
       }
     } else if (opts.staffId) {
       query = query.eq('staff_id', opts.staffId)

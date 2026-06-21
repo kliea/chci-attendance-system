@@ -150,14 +150,28 @@
               />
             </div>
 
-            <!-- Time Field -->
-            <div>
-              <label for="rectify-time" class="block text-sm font-medium text-gray-900 mb-2">
-                Specify rectified time <span class="text-red-500">*</span>
+            <!-- Time In Field (shown when time_in is selected) -->
+            <div v-if="form.nature === 'time_in'">
+              <label for="rectify-time-in" class="block text-sm font-medium text-gray-900 mb-2">
+                Correct Time In <span class="text-red-500">*</span>
               </label>
               <input
-                id="rectify-time"
-                v-model="form.rectifiedTime"
+                id="rectify-time-in"
+                v-model="form.timeIn"
+                type="time"
+                required
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors"
+              />
+            </div>
+
+            <!-- Time Out Field (shown when time_out is selected) -->
+            <div v-if="form.nature === 'time_out'">
+              <label for="rectify-time-out" class="block text-sm font-medium text-gray-900 mb-2">
+                Correct Time Out <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="rectify-time-out"
+                v-model="form.timeOut"
                 type="time"
                 required
                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 focus:border-[#003777] focus:ring-1 focus:ring-[#003777] transition-colors"
@@ -236,7 +250,7 @@
                         </span>
                       </td>
                       <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                        {{ rect.rectifiedTime }}
+                        {{ rect.timeIn || rect.timeOut }}
                       </td>
                       <td class="px-6 py-4 text-sm text-gray-600 max-w-xs">
                         <div class="truncate" :title="rect.reason">{{ rect.reason }}</div>
@@ -324,7 +338,8 @@ const form = reactive({
   date: "",
   nature: "time_in",
   reason: "",
-  rectifiedTime: "",
+  timeIn: "",
+  timeOut: "",
 });
 
 const submitting = ref(false);
@@ -348,7 +363,9 @@ function closeRectifyModal() {
 }
 
 function addRectification() {
-  if (!form.date || !form.reason || !form.rectifiedTime) {
+  const timeValue = form.nature === "time_in" ? form.timeIn : form.timeOut;
+  
+  if (!form.date || !form.reason || !timeValue) {
     return;
   }
 
@@ -357,7 +374,8 @@ function addRectification() {
     date: form.date,
     nature: form.nature,
     reason: form.reason.trim(),
-    rectifiedTime: form.rectifiedTime,
+    timeIn: form.nature === "time_in" ? form.timeIn : null,
+    timeOut: form.nature === "time_out" ? form.timeOut : null,
   });
 
   resetForm();
@@ -377,16 +395,13 @@ async function submitAllRequests() {
 
   try {
     const promises = rectifications.value.map((rect) => {
-      const requestedIn = rect.nature === "time_in" ? rect.rectifiedTime : null;
-      const requestedOut = rect.nature === "time_out" ? rect.rectifiedTime : null;
-
       return rectificationsStore.createRequest({
         userId: authStore.profile?.id,
         attendanceId: null,
         date: rect.date,
         reason: rect.reason,
-        requestedIn: requestedIn || null,
-        requestedOut: requestedOut || null,
+        requestedIn: rect.timeIn || null,
+        requestedOut: rect.timeOut || null,
       });
     });
 
@@ -414,7 +429,8 @@ function resetForm() {
   form.date = "";
   form.nature = "time_in";
   form.reason = "";
-  form.rectifiedTime = "";
+  form.timeIn = "";
+  form.timeOut = "";
   rectificationsStore.clearSubmitStatus();
 }
 </script>
